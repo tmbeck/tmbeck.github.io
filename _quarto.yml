@@ -4,7 +4,7 @@ project:
 website:
   title: "Tim's Blog"
   site-url: "https://www.tbeck.io"
-  page-footer: "© Tim Beck, 2022. All Rights Reserved."
+  page-footer: "© Tim Beck, 2022. All Rights Reserved.<br>Powered by <a href=\"https://www.quarto.org\">Quarto</a>"
   navbar:
     right:
       - about.qmd
