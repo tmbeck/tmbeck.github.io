@@ -1,5 +1,13 @@
 [
   {
+    "listing": "/nbs/nbs.html",
+    "items": [
+      "/nbs/2020/09/2020-09-18-fossils-production.html",
+      "/nbs/2020/09/2020-09-06-fossil-dataset.html",
+      "/nbs/2020/09/2020-09-05-pywavelets.html"
+    ]
+  },
+  {
     "listing": "/index.html",
     "items": [
       "/posts/2022/09/2022-09-24-homelab-troubleshooting.html",
@@ -11,14 +19,6 @@
       "/nbs/2020/09/2020-09-18-fossils-production.html",
       "/nbs/2020/09/2020-09-06-fossil-dataset.html",
       "/nbs/2020/09/2020-09-05-lesson-1.html",
-      "/nbs/2020/09/2020-09-05-pywavelets.html"
-    ]
-  },
-  {
-    "listing": "/nbs/nbs.html",
-    "items": [
-      "/nbs/2020/09/2020-09-18-fossils-production.html",
-      "/nbs/2020/09/2020-09-06-fossil-dataset.html",
       "/nbs/2020/09/2020-09-05-pywavelets.html"
     ]
   }

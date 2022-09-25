@@ -6,15 +6,15 @@
       version="2.0">
 <channel>
 <title>Tim's Blog</title>
-<link>https://www.tbeck.io/blog/index.html</link>
-<atom:link href="https://www.tbeck.io/blog/index.xml" rel="self" type="application/rss+xml"/>
+<link>https://www.tbeck.io/index.html</link>
+<atom:link href="https://www.tbeck.io/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.1.251</generator>
 <lastBuildDate>Sat, 24 Sep 2022 07:00:00 GMT</lastBuildDate>
 <item>
   <title>Homelab Troubleshooting</title>
   <dc:creator>Tim Beck</dc:creator>
-  <link>https://www.tbeck.io/blog/posts/2022/09/2022-09-24-homelab-troubleshooting.html</link>
+  <link>https://www.tbeck.io/posts/2022/09/2022-09-24-homelab-troubleshooting.html</link>
   <description><![CDATA[ 
 
 
@@ -150,13 +150,13 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 
  ]]></description>
   <category>homelab</category>
-  <guid>https://www.tbeck.io/blog/posts/2022/09/2022-09-24-homelab-troubleshooting.html</guid>
+  <guid>https://www.tbeck.io/posts/2022/09/2022-09-24-homelab-troubleshooting.html</guid>
   <pubDate>Sat, 24 Sep 2022 07:00:00 GMT</pubDate>
 </item>
 <item>
   <title>Migration from fastpages</title>
   <dc:creator>Tim Beck</dc:creator>
-  <link>https://www.tbeck.io/blog/posts/migration/index.html</link>
+  <link>https://www.tbeck.io/posts/migration/index.html</link>
   <description><![CDATA[ 
 
 
@@ -164,21 +164,21 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 
 <p>Today I migrated the old blog from <a href="https://forums.fast.ai/t/fastpages-deprecating-fastpages-in-favor-of-quarto/99095/1">fastpages</a> to <a href="https://quarto.org/">Quarto</a>.</p>
 <p>Quarto works a bit different than fastpages, but I’m excited that it’s being actively developed.</p>
-<p><img src="https://www.tbeck.io/blog/posts/migration/thumbnail.jpg" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/posts/migration/thumbnail.jpg" class="img-fluid"></p>
 <p>Since this post doesn’t specify an explicit <code>image</code>, the first image in the post will be used in the listing page of posts.</p>
 
 
 
  ]]></description>
   <category>news</category>
-  <guid>https://www.tbeck.io/blog/posts/migration/index.html</guid>
+  <guid>https://www.tbeck.io/posts/migration/index.html</guid>
   <pubDate>Sat, 24 Sep 2022 07:00:00 GMT</pubDate>
-  <media:content url="https://www.tbeck.io/blog/posts/migration/thumbnail.jpg" medium="image" type="image/jpeg"/>
+  <media:content url="https://www.tbeck.io/posts/migration/thumbnail.jpg" medium="image" type="image/jpeg"/>
 </item>
 <item>
   <title>Post With Code</title>
   <dc:creator>Harlow Malloc</dc:creator>
-  <link>https://www.tbeck.io/blog/posts/post-with-code/index.html</link>
+  <link>https://www.tbeck.io/posts/post-with-code/index.html</link>
   <description><![CDATA[ 
 
 
@@ -192,13 +192,13 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
   <category>news</category>
   <category>code</category>
   <category>analysis</category>
-  <guid>https://www.tbeck.io/blog/posts/post-with-code/index.html</guid>
+  <guid>https://www.tbeck.io/posts/post-with-code/index.html</guid>
   <pubDate>Sat, 24 Sep 2022 07:00:00 GMT</pubDate>
-  <media:content url="https://www.tbeck.io/blog/posts/post-with-code/image.jpg" medium="image" type="image/jpeg"/>
+  <media:content url="https://www.tbeck.io/posts/post-with-code/image.jpg" medium="image" type="image/jpeg"/>
 </item>
 <item>
   <title>Production from Scratch - fastai Lesson 3</title>
-  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-fossils-production.html</link>
+  <link>https://www.tbeck.io/nbs/2020/09/2020-09-18-fossils-production.html</link>
   <description><![CDATA[ 
 
 
@@ -272,21 +272,21 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 <div class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1">dls.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">40</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">4</span>)</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-12-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-12-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1">dls <span class="op" style="color: #5E5E5E;">=</span> ImageDataLoaders.from_folder(path<span class="op" style="color: #5E5E5E;">/</span><span class="st" style="color: #20794D;">'trilobite'</span>, valid_pct<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.2</span>, item_tfms<span class="op" style="color: #5E5E5E;">=</span>Resize(<span class="dv" style="color: #AD0000;">256</span>))</span>
 <span id="cb15-2">dls.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">40</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">4</span>)</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-13-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-13-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1">dls <span class="op" style="color: #5E5E5E;">=</span> ImageDataLoaders.from_folder(path<span class="op" style="color: #5E5E5E;">/</span><span class="st" style="color: #20794D;">'bivalve'</span>, valid_pct<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.2</span>, item_tfms<span class="op" style="color: #5E5E5E;">=</span>Resize(<span class="dv" style="color: #AD0000;">256</span>))</span>
 <span id="cb16-2">dls.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">40</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">4</span>)</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <p>We are now ready to create a DataBlock. The DataBlock will contain our images and labels; it will need to know how to ‘find’ the items, how to separate them into a training set and a validation set, where to get the dependent variable from (the label, e.g.&nbsp;the directory they are in), and last how to transform the image so that we can run CUDA on it.</p>
@@ -305,13 +305,13 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 <div class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1">dls.valid.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">10</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-17-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-17-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1">dls.train.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">10</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-18-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-18-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="22">
@@ -385,13 +385,13 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 
 </div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-20-output-2.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-20-output-2.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1">interp.plot_top_losses(<span class="dv" style="color: #AD0000;">10</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-21-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-21-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="17">
@@ -427,13 +427,13 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
  ]]></description>
   <category>fossils</category>
   <category>jupyter</category>
-  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-fossils-production.html</guid>
+  <guid>https://www.tbeck.io/nbs/2020/09/2020-09-18-fossils-production.html</guid>
   <pubDate>Fri, 18 Sep 2020 07:00:00 GMT</pubDate>
 </item>
 <item>
   <title>fastai v4: Lesson 3</title>
   <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
-  <link>https://www.tbeck.io/blog/posts/2020/09/2020-09-16-lesson-3.html</link>
+  <link>https://www.tbeck.io/posts/2020/09/2020-09-16-lesson-3.html</link>
   <description><![CDATA[ 
 
 
@@ -483,7 +483,7 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <figure class="figure">
-<img src="https://www.tbeck.io/blog/posts/2020/09/images/sgd.png" title="Stochastic Gradient Descent" class="img-fluid figure-img">
+<img src="https://www.tbeck.io/posts/2020/09/images/sgd.png" title="Stochastic Gradient Descent" class="img-fluid figure-img">
 </figure>
 <p></p><figcaption class="figure-caption">SGD</figcaption><p></p>
 </figure>
@@ -622,14 +622,14 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
  ]]></description>
   <category>education</category>
   <category>fastai</category>
-  <guid>https://www.tbeck.io/blog/posts/2020/09/2020-09-16-lesson-3.html</guid>
+  <guid>https://www.tbeck.io/posts/2020/09/2020-09-16-lesson-3.html</guid>
   <pubDate>Wed, 16 Sep 2020 07:00:00 GMT</pubDate>
-  <media:content url="https://www.tbeck.io/blog/posts/2020/09/images/sgd.png " medium="image"/>
+  <media:content url="https://www.tbeck.io/posts/2020/09/images/sgd.png " medium="image"/>
 </item>
 <item>
   <title>fastai v4: Lesson 2</title>
   <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
-  <link>https://www.tbeck.io/blog/posts/2020/09/2020-09-06-lesson-2.html</link>
+  <link>https://www.tbeck.io/posts/2020/09/2020-09-06-lesson-2.html</link>
   <description><![CDATA[ 
 
 
@@ -810,12 +810,12 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
  ]]></description>
   <category>education</category>
   <category>fastai</category>
-  <guid>https://www.tbeck.io/blog/posts/2020/09/2020-09-06-lesson-2.html</guid>
+  <guid>https://www.tbeck.io/posts/2020/09/2020-09-06-lesson-2.html</guid>
   <pubDate>Sun, 06 Sep 2020 07:00:00 GMT</pubDate>
 </item>
 <item>
   <title>Fossil Dataset Construction</title>
-  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset.html</link>
+  <link>https://www.tbeck.io/nbs/2020/09/2020-09-06-fossil-dataset.html</link>
   <description><![CDATA[ 
 
 
@@ -1134,7 +1134,7 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 <p>Here is what the widget ends up looking like:</p>
 <div class="cell" data-execution_count="18">
 <div class="cell-output cell-output-display" data-execution_count="18">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset_files/figure-html/cell-8-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-06-fossil-dataset_files/figure-html/cell-8-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <section id="reviewing-the-dataset" class="level2">
@@ -1145,7 +1145,7 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
 </div>
 <div class="cell" data-scrolled="true" data-execution_count="16">
 <div class="cell-output cell-output-display" data-execution_count="16">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset_files/figure-html/cell-10-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-06-fossil-dataset_files/figure-html/cell-10-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 </section>
@@ -1161,14 +1161,14 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
  ]]></description>
   <category>projects</category>
   <category>jupyter</category>
-  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset.html</guid>
+  <guid>https://www.tbeck.io/nbs/2020/09/2020-09-06-fossil-dataset.html</guid>
   <pubDate>Sun, 06 Sep 2020 07:00:00 GMT</pubDate>
-  <media:content url="https://www.tbeck.io/blog/nbs/2020/09/images/fossil_matrix.png" medium="image" type="image/png" height="113" width="144"/>
+  <media:content url="https://www.tbeck.io/nbs/2020/09/images/fossil_matrix.png" medium="image" type="image/png" height="113" width="144"/>
 </item>
 <item>
   <title>The story so far</title>
   <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
-  <link>https://www.tbeck.io/blog/posts/2020/09/2020-09-05-the-story-so-far.html</link>
+  <link>https://www.tbeck.io/posts/2020/09/2020-09-05-the-story-so-far.html</link>
   <description><![CDATA[ 
 
 
@@ -1332,13 +1332,13 @@ Press any key to continue or 'C' to load the configuration utility.</code></pre>
  ]]></description>
   <category>education</category>
   <category>fastai</category>
-  <guid>https://www.tbeck.io/blog/posts/2020/09/2020-09-05-the-story-so-far.html</guid>
+  <guid>https://www.tbeck.io/posts/2020/09/2020-09-05-the-story-so-far.html</guid>
   <pubDate>Sat, 05 Sep 2020 07:00:00 GMT</pubDate>
 </item>
 <item>
   <title>fastai v4: Lesson 1</title>
   <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
-  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-lesson-1.html</link>
+  <link>https://www.tbeck.io/nbs/2020/09/2020-09-05-lesson-1.html</link>
   <description><![CDATA[ 
 
 
@@ -1669,12 +1669,12 @@ Essentially, the inputs of a model are used to generate results. Those results h
  ]]></description>
   <category>education</category>
   <category>fastai</category>
-  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-lesson-1.html</guid>
+  <guid>https://www.tbeck.io/nbs/2020/09/2020-09-05-lesson-1.html</guid>
   <pubDate>Sat, 05 Sep 2020 07:00:00 GMT</pubDate>
 </item>
 <item>
   <title>Wavelets in Jupyter Notebooks</title>
-  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets.html</link>
+  <link>https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets.html</link>
   <description><![CDATA[ 
 
 
@@ -1801,13 +1801,13 @@ Essentially, the inputs of a model are used to generate results. Those results h
 <span id="cb3-95">plot_fft_plus_power(time, signal)</span>
 <span id="cb3-96">plot_wavelet(time, signal, scales)</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-1.png" class="img-fluid"></p>
 </div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-2.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-2.png" class="img-fluid"></p>
 </div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-3.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-3.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="4">
@@ -1846,7 +1846,7 @@ Essentially, the inputs of a model are used to generate results. Those results h
 <span id="cb4-33">plt.tight_layout()</span>
 <span id="cb4-34">plt.show()</span></code></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-5-output-1.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-5-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <div class="cell" data-execution_count="5">
@@ -1972,7 +1972,7 @@ Essentially, the inputs of a model are used to generate results. Those results h
 <pre><code>array([[&lt;AxesSubplot:title={'center':'-0.15'}&gt;]], dtype=object)</code></pre>
 </div>
 <div class="cell-output cell-output-display">
-<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-8-output-2.png" class="img-fluid"></p>
+<p><img src="https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-8-output-2.png" class="img-fluid"></p>
 </div>
 </div>
 
@@ -1982,7 +1982,7 @@ Essentially, the inputs of a model are used to generate results. Those results h
  ]]></description>
   <category>wavelets</category>
   <category>jupyter</category>
-  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets.html</guid>
+  <guid>https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets.html</guid>
   <pubDate>Sat, 05 Sep 2020 07:00:00 GMT</pubDate>
 </item>
 </channel>

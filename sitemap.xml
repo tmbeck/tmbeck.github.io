@@ -1,51 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.tbeck.io/blog/about.html</loc>
-    <lastmod>2022-09-25T20:13:46.510Z</lastmod>
+    <loc>https://www.tbeck.io/nbs/2020/09/2020-09-05-lesson-1.html</loc>
+    <lastmod>2022-09-25T20:29:27.908Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/index.html</loc>
-    <lastmod>2022-09-25T20:13:46.850Z</lastmod>
+    <loc>https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets.html</loc>
+    <lastmod>2022-09-25T20:29:28.151Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-lesson-1.html</loc>
-    <lastmod>2022-09-25T20:13:47.143Z</lastmod>
+    <loc>https://www.tbeck.io/nbs/2020/09/2020-09-06-fossil-dataset.html</loc>
+    <lastmod>2022-09-25T20:29:28.444Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets.html</loc>
-    <lastmod>2022-09-25T20:13:47.363Z</lastmod>
+    <loc>https://www.tbeck.io/nbs/2020/09/2020-09-18-fossils-production.html</loc>
+    <lastmod>2022-09-25T20:29:28.711Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset.html</loc>
-    <lastmod>2022-09-25T20:13:47.620Z</lastmod>
+    <loc>https://www.tbeck.io/posts/2020/09/2020-09-05-the-story-so-far.html</loc>
+    <lastmod>2022-09-25T20:29:29.101Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-fossils-production.html</loc>
-    <lastmod>2022-09-25T20:13:47.860Z</lastmod>
+    <loc>https://www.tbeck.io/posts/2020/09/2020-09-06-lesson-2.html</loc>
+    <lastmod>2022-09-25T20:29:29.278Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/posts/2020/09/2020-09-05-the-story-so-far.html</loc>
-    <lastmod>2022-09-25T20:13:48.233Z</lastmod>
+    <loc>https://www.tbeck.io/posts/2020/09/2020-09-16-lesson-3.html</loc>
+    <lastmod>2022-09-25T20:29:29.521Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/posts/2020/09/2020-09-06-lesson-2.html</loc>
-    <lastmod>2022-09-25T20:13:48.420Z</lastmod>
+    <loc>https://www.tbeck.io/posts/2022/09/2022-09-24-homelab-troubleshooting.html</loc>
+    <lastmod>2022-09-25T20:29:29.678Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/posts/2020/09/2020-09-16-lesson-3.html</loc>
-    <lastmod>2022-09-25T20:13:48.660Z</lastmod>
+    <loc>https://www.tbeck.io/posts/migration/index.html</loc>
+    <lastmod>2022-09-25T20:29:29.821Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/posts/2022/09/2022-09-24-homelab-troubleshooting.html</loc>
-    <lastmod>2022-09-25T20:13:48.817Z</lastmod>
+    <loc>https://www.tbeck.io/posts/post-with-code/index.html</loc>
+    <lastmod>2022-09-25T20:29:29.958Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/posts/migration/index.html</loc>
-    <lastmod>2022-09-25T20:13:48.960Z</lastmod>
+    <loc>https://www.tbeck.io/about.html</loc>
+    <lastmod>2022-09-25T20:29:30.104Z</lastmod>
   </url>
   <url>
-    <loc>https://www.tbeck.io/blog/posts/post-with-code/index.html</loc>
-    <lastmod>2022-09-25T20:13:49.103Z</lastmod>
+    <loc>https://www.tbeck.io/index.html</loc>
+    <lastmod>2022-09-25T20:29:30.324Z</lastmod>
   </url>
 </urlset>

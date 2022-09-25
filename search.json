@@ -1,26 +1,5 @@
 [
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "I recieved a degree in Electrical Engineering from UCSD in 2007. I’ve worked most of my engineering career at Viasat, where I’ve enjoyed career mobility by being a test engineer, software engineer, and hardware engineer, later becoming a cross-functional leader of an engineering organization comprised of mechanical, hardware (including programmable logic), and software engineers. Much of my careeer has been focused on constructing what would now be considered “well-labeled datasets”, as well as web-based analysis tools for computing process capability metrics, supporting root cause analysis, providing insight into product performance, general process automation, etc.\nSince learning more about data science and machine learning, I’ve begun exploring the intersection of ML and manufacturing, particularly how ML can accelerate manufacturing & test processes. I feel passionately that this technology can be used to improve product design by providing greater context and understanding by combining manufacturing, test, and operational datasets.\nI first started diving into machine learning myself using the fast.ai v3 course, but switched to v4 of the course when it was recently released. In Lesson 3 of v4 of the course, Jeremy recommends to write about what you are learning. Once I saw fastpages[^1], I figured it was time to start writing. They had me once I found out I could convert jupyter notebooks to blog posts!\nI created this site to help me document my journey, study, challenge myself, and show off what I’ve learned."
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "tbeck.io/blog",
-    "section": "",
-    "text": "homelab\n\n\n\n\n\n\n\n\n\n\n\nSep 24, 2022\n\n\nTim Beck\n\n\n\n\n\n\n  \n\n\n\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nSep 24, 2022\n\n\nTim Beck\n\n\n\n\n\n\n  \n\n\n\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nSep 24, 2022\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\n\n\n\n\n\n\neducation\n\n\nfastai\n\n\n\n\nNotes from Lesson 3 of fastai v4\n\n\n\n\n\n\nSep 16, 2020\n\n\nTim Beck\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\neducation\n\n\nfastai\n\n\n\n\nNotes from Lesson 2 of fastai v4\n\n\n\n\n\n\nSep 6, 2020\n\n\nTim Beck\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\neducation\n\n\nfastai\n\n\n\n\nReview & notes from the first two lessons of fastai v4.\n\n\n\n\n\n\nSep 5, 2020\n\n\nTim Beck\n\n\n\n\n\n\nNo matching items\n\n\nAll posts"
-  },
-  {
-    "objectID": "index.html#notebooks",
-    "href": "index.html#notebooks",
-    "title": "tbeck.io/blog",
-    "section": "Notebooks",
-    "text": "Notebooks"
-  },
-  {
     "objectID": "nbs/2020/09/2020-09-05-lesson-1.html",
     "href": "nbs/2020/09/2020-09-05-lesson-1.html",
     "title": "fastai v4: Lesson 1",
@@ -89,5 +68,26 @@
     "title": "Post With Code",
     "section": "",
     "text": "This is a post with executable code."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "I recieved a degree in Electrical Engineering from UCSD in 2007. I’ve worked most of my engineering career at Viasat, where I’ve enjoyed career mobility by being a test engineer, software engineer, and hardware engineer, later becoming a cross-functional leader of an engineering organization comprised of mechanical, hardware (including programmable logic), and software engineers. Much of my careeer has been focused on constructing what would now be considered “well-labeled datasets”, as well as web-based analysis tools for computing process capability metrics, supporting root cause analysis, providing insight into product performance, general process automation, etc.\nSince learning more about data science and machine learning, I’ve begun exploring the intersection of ML and manufacturing, particularly how ML can accelerate manufacturing & test processes. I feel passionately that this technology can be used to improve product design by providing greater context and understanding by combining manufacturing, test, and operational datasets.\nI first started diving into machine learning myself using the fast.ai v3 course, but switched to v4 of the course when it was recently released. In Lesson 3 of v4 of the course, Jeremy recommends to write about what you are learning. Once I saw fastpages[^1], I figured it was time to start writing. They had me once I found out I could convert jupyter notebooks to blog posts!\nI created this site to help me document my journey, study, challenge myself, and show off what I’ve learned."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "tbeck.io/blog",
+    "section": "",
+    "text": "homelab\n\n\n\n\n\n\n\n\n\n\n\nSep 24, 2022\n\n\nTim Beck\n\n\n\n\n\n\n  \n\n\n\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nSep 24, 2022\n\n\nTim Beck\n\n\n\n\n\n\n  \n\n\n\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nSep 24, 2022\n\n\nHarlow Malloc\n\n\n\n\n\n\n  \n\n\n\n\n\n\n\n\n\n\neducation\n\n\nfastai\n\n\n\n\nNotes from Lesson 3 of fastai v4\n\n\n\n\n\n\nSep 16, 2020\n\n\nTim Beck\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\neducation\n\n\nfastai\n\n\n\n\nNotes from Lesson 2 of fastai v4\n\n\n\n\n\n\nSep 6, 2020\n\n\nTim Beck\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\neducation\n\n\nfastai\n\n\n\n\nReview & notes from the first two lessons of fastai v4.\n\n\n\n\n\n\nSep 5, 2020\n\n\nTim Beck\n\n\n\n\n\n\nNo matching items\n\n\nAll posts"
+  },
+  {
+    "objectID": "index.html#notebooks",
+    "href": "index.html#notebooks",
+    "title": "tbeck.io/blog",
+    "section": "Notebooks",
+    "text": "Notebooks"
   }
 ]
