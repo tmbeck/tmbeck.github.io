@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.251">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Tim Beck">
+<meta name="dcterms.date" content="2020-09-16">
+<meta name="keywords" content="fastai">
+<meta name="description" content="Notes from Lesson 3 of fastai v4">
+
+<title>Tim’s Blog - fastai v4: Lesson 3</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Tim’s Blog</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html">About</a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts/">Posts</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/tmbeck"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://linkedin.com/in/tmbeck"><i class="bi bi-linkedin" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">fastai v4: Lesson 3</h1>
+                  <div>
+        <div class="description">
+          Notes from Lesson 3 of fastai v4
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">education</div>
+                <div class="quarto-category">fastai</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://www.linkedin.com/in/tmbeck">Tim Beck</a> </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 16, 2020</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#lesson-3" id="toc-lesson-3" class="nav-link active" data-scroll-target="#lesson-3">Lesson 3</a>
+  <ul class="collapse">
+  <li><a href="#links" id="toc-links" class="nav-link" data-scroll-target="#links">Links</a></li>
+  <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">Notes</a>
+  <ul class="collapse">
+  <li><a href="#from-chapter-4" id="toc-from-chapter-4" class="nav-link" data-scroll-target="#from-chapter-4">From Chapter 4</a></li>
+  </ul></li>
+  <li><a href="#questionnaire" id="toc-questionnaire" class="nav-link" data-scroll-target="#questionnaire">Questionnaire</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<section id="lesson-3" class="level1">
+<h1>Lesson 3</h1>
+<p>Notes from fastai lesson 3, which is Chapter 4 in the book (the end of Ch. 2 is a “choose your own adventure” where you can continue on to Ch. 3, Data Ethics, or Ch. 4, Under the Hood: Training a Digit Classifier). The video lessons pick up at Ch. 4. But After reading much of Ch. 3, I find the Ethics to be an intriguing topic, especially for leaders of data science organizations, where failure to consider Data Ethics might put your organization (or at least its reputation) at risk.</p>
+<section id="links" class="level2">
+<h2 class="anchored" data-anchor-id="links">Links</h2>
+<ul>
+<li><a href="https://course.fast.ai/videos/?lesson=3">Lesson 3 Video</a></li>
+<li><a href="https://forums.fast.ai/">fastai Forum</a></li>
+<li><a href="http://jalammar.github.io/visual-numpy/">A visual intro to numpy and data representation</a></li>
+</ul>
+</section>
+<section id="notes" class="level2">
+<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="from-chapter-4" class="level3">
+<h3 class="anchored" data-anchor-id="from-chapter-4">From Chapter 4</h3>
+<p>Covered images as arrays or tensors of pixels</p>
+<p>Cool trick:</p>
+<p>Visualizing greyscale images inside of a pandas df by specifying a background graident:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>im3_t <span class="op">=</span> tensor(im3)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(im3_t[<span class="dv">4</span>:<span class="dv">15</span>,<span class="dv">4</span>:<span class="dv">22</span>])</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>df.style.set_properties(<span class="op">**</span>{<span class="st">'font-size'</span>:<span class="st">'6pt'</span>}).background_gradient(<span class="st">'Greys'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="stop-and-think" class="level4">
+<h4 class="anchored" data-anchor-id="stop-and-think">Stop and Think</h4>
+<blockquote class="blockquote">
+<p>…how a computer might be able to recognize these two digits. What kinds of features might it be able to look at? How might it be able to identify these features? How could it combine them?</p>
+</blockquote>
+<p>This isn’t a new topic for me as it overlaps with my <em>Signals &amp; Systems</em> coursework, as well as DSP.</p>
+<ul>
+<li>Most straightforward: sum(A-B) = similarity score, identical images == 0</li>
+<li>The above, but after running through edge detection (first derivative)</li>
+<li>Use a kerneling function step-wise compare the outputs of the kernel function between the two systems</li>
+</ul>
+<p>Measuring distance in vectors * L1 norm / mean absolute difference: abs(A-B).mean()</p>
+<pre><code>Use `F.l1_loss()`</code></pre>
+<ul>
+<li><p>L2 norm / root mean square error (RMSE): sqrt(mean((A-B)^2))</p>
+<p>Use <code>F.mse_loss()</code></p></li>
+</ul>
+<p>When computing <code>mean()</code> with tensors, <code>mean()</code> can take an optional tuple argument that specifies the range of axes over which to compute the mean.</p>
+<p>Much of this chapter covers an introduction to numpy and tensors. Vectors and matrices aren’t new to me, and even slicing n-dimensional arrays is familiar (I have previous experience in perl and C). But I was struggling with this in python, e.g.&nbsp;the difference between <code>[:,:]</code> and <code>[:][:]</code>. I found this article by Jay Alammar very helpful: <a href="http://jalammar.github.io/visual-numpy/">A visual intro to numpy and data representation</a> (thank you Jay!).</p>
+<p>Stochastic Gradient Descent (SGD)</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<figure class="figure">
+<img src="images/sgd.png" title="Stochastic Gradient Descent" class="img-fluid figure-img">
+</figure>
+<p></p><figcaption class="figure-caption">SGD</figcaption><p></p>
+</figure>
+</div>
+<p>So far our primitive model is little more than a math function with no memory and no feedback. To do better we need to be able to train it and to make changes to a set of weights so as to alter the next outcome of the model.</p>
+<p>Weights for each pixel. Could use the computed means as weights, where the flattened mean are weights.</p>
+<p>Consider the simple function <code>def pr_eight(x,w) = (x*w).sum()</code> where <code>x</code>, <code>w</code> are vectors for the independent variables and the weights, respectively. How would we make this a machine learning “8” classifier?</p>
+<ol type="1">
+<li>Need to init(w) - seeded rand()?</li>
+<li>For each image in our set, compute <code>x*w</code> e.g.&nbsp;make a prediction.</li>
+<li>Compute the loss of the model (actual vs.&nbsp;expected)</li>
+<li>Compute the gradient: a measure of change for each weight that changes the loss</li>
+<li>Update the weights</li>
+<li><code>goto</code> 2. until some condition (e.g.&nbsp;the model is good)</li>
+</ol>
+<p>Initialize</p>
+<p>Start with random. How would random compare against the <code>mean()</code> though?</p>
+<p>Loss</p>
+<p>The convention is that small loss == good, big loss == bad. So we want a function that will measure ourselves as such.</p>
+<p>Step</p>
+<p>This is a change to the weight that results in a new prediction. Weights can go up or down. Mentions using gradients (calculus). But not clear how to avoid things like local minimums…</p>
+<p>Stop</p>
+<p>How we know when to stop - e.g.&nbsp;such as when our model begins to get worse at its job.</p>
+</section>
+<section id="gradients" class="level4">
+<h4 class="anchored" data-anchor-id="gradients">Gradients</h4>
+<ul>
+<li>Gradients are a (continuous? since you must take at least the first derivative) function (used the quadratic y=x**2) with a local minimum (since there’s a stopping point where y’==0?). It’s also symmetric around an axis.</li>
+<li>A random value on the line is chosen (some x) as the initial value</li>
+<li>pytorch provides the <code>backward()</code> function to compute the gradient of a layer (array) of a network. This is the <em>backward pass</em> through the network. The <em>forward pass</em> is where the activation function is calculated.</li>
+<li>This is all handled through object-oriented “magic” in pytorch.</li>
+<li>stepping is done by altering the weights by your learning rate (<code>lr</code>) * the gradient of your weights. Recall that <code>1e-5</code> is a common rate.</li>
+<li>Takeaway: the gradient is a search for a local minimum. Step size through this search is the learning rate. This is done by backpropagating the affect of a function to a tensor’s gradient. In this sense, “all the points” in our array are somewhere on this line and we wish to find a tensor such that the sum of the gradients is closest to zero. Think I said that correctly.</li>
+</ul>
+<p>Application:</p>
+<p>Let’s apply the above to our MNIST imageset…</p>
+</section>
+</section>
+</section>
+<section id="questionnaire" class="level2">
+<h2 class="anchored" data-anchor-id="questionnaire">Questionnaire</h2>
+<ol type="1">
+<li><p>What letters are often used to signify the independent and dependent variables?</p>
+<p>x for the independent variable and y for the dependent variable, as in math, e.g.&nbsp;<code>y = f(x)</code>.</p></li>
+<li><p>What’s the difference between the crop, pad, and squish resize approaches? When might you choose one over the others?</p>
+<p>Crop trims image to size, pad adds zeros (black) to size, squish alters the aspect ratio to size. The choice depends on the data and the subject. It may be advantageous for the model to recognize half a bear, such as if trim is used.</p></li>
+<li><p>What is data augmentation? Why is it needed?</p>
+<p>Data augmentation provides a broader view of material to train on. It can be a way to diversify the training set the model is based on.</p></li>
+<li><p>What is the difference between item_tfms and batch_tfms?</p>
+<p><code>item_tfms</code> operates on each item in a batch while <code>batch_tfms</code> operates on each batch.</p></li>
+<li><p>What is a confusion matrix?</p>
+<p>A confusion matrix describes the predictions of the model, showing both where it is right vs.&nbsp;where it is wrong. It is shown as a table where x and y are your labels/categories and each cell is the number of images predicted vs.&nbsp;actually labeled.</p></li>
+<li><p>What does export save?</p>
+<p>Export saves the labels, weights, and biases of the model for use on another system, e.g.&nbsp;to deploy to production.</p></li>
+<li><p>What is it called when we use a model for getting predictions, instead of training?</p>
+<p>This is called inference.</p></li>
+<li><p>What are IPython widgets?</p>
+<p>Controls that couple python, javascript, and html into a functional GUI within a jupyter notebook.</p></li>
+<li><p>When might you want to use CPU for deployment? When might GPU be better?</p>
+<p>For inference (e.g.&nbsp;use in production), a CPU is likely sufficient, however for models deployed at scale, a GPU may be faster.</p></li>
+<li><p>What are the downsides of deploying your app to a server, instead of to a client (or edge) device such as a phone or PC?</p>
+<ol type="1">
+<li>It requires online access</li>
+<li>It is limited by the latency and bandwidth available of the underlying network</li>
+<li>It requires centralized resources (e.g.&nbsp;the server it runs on)</li>
+</ol></li>
+<li><p>What are three examples of problems that could occur when rolling out a bear warning system in practice?</p>
+<ol type="1">
+<li>It could be fooled by costumes or may not recognize partial bear images</li>
+<li>It might not know how to recognize all bears</li>
+<li>If online, requires internet connectivity, if offline, it requires updates</li>
+</ol></li>
+<li><p>What is “out-of-domain data”?</p>
+<p>Data shown to a model that is unlike anything it was trained on</p></li>
+<li><p>What is “domain shift”?</p>
+<p>Where the data our model is shown in production changes over time, diverging from what it was trained on. To resolve this, online training or simply retraining are used.</p></li>
+<li><p>What are the three steps in the deployment process? <em>This is question 27 in Chapter 2 of fastbook</em></p>
+<ol type="1">
+<li>Create (train) the model</li>
+<li>Export the model</li>
+<li>Deploy the model for inference</li>
+</ol></li>
+<li><p>How is a grayscale image represented on a computer? How about a color image?</p>
+<p>Grayscale images are represented as an array of 8-bit values. Color images (at least RGB colorspaced) are represented as a tuple/vector of three 8-bit values. For example, the shape of a greyscale image that is 28 pixels by 28 pixels would be (28, 28) and a color image (28, 28, 3).</p></li>
+<li><p>How are the files and folders in the MNIST_SAMPLE dataset structured? Why?</p>
+<p>The data set has been pre-separated into a training set and a validation set. In each dataset, directories for each numeral contain images of that numeral.</p></li>
+<li><p>Explain how the “pixel similarity” approach to classifying digits works.</p>
+<p>The “pixel similarity” approach used an average of all images of a numeral to create a baseline to compare new numeral images against. This can be done, say, by subtracting the sample image from the average and then using the result to compute an error vector, such as by taking the L1 normal (abs() of the difference minus the mean()).</p></li>
+<li><p>What is a list comprehension? Create one now that selects odd numbers from a list and doubles them.</p>
+<p>List comprehension is a feature of the python language that returns a list from a some function. For example</p>
+<p><code>doubles = [ (x*2) for x in range(1, 100, 2) ]</code></p>
+<p>Returns a list containing the double of each odd number from 1 up to 100.</p></li>
+<li><p>What is a “rank-3 tensor”?</p>
+<p>A rank-3 tensor is a matrix. Recall that a rank-0 tensor is a scalar and a rank-1 tensor is a vector.</p></li>
+<li><p>What is the difference between tensor rank and shape? How do you get the rank from the shape?</p>
+<p>A tensor shape describes the length of a tensor in each of its dimensions. The rank describes the number of dimensions. The rank can be computed as:</p>
+<p><code>rank = len(t.shape)</code></p></li>
+<li><p>What are RMSE and L1 norm?</p>
+<p>L1 norm is the mean absolute distance: abs(A-B) - mean(A-B) L2 norm is the root mean square average: (A-B)**2.mean().sqrt()</p></li>
+<li><p>How can you apply a calculation on thousands of numbers at once, many thousands of times faster than a Python loop?</p>
+<p>Using matrix math in numpy or tensors in pytorch.</p></li>
+<li><p>Create a 3×3 tensor or array containing the numbers from 1 to 9. Double it. Select the bottom-right four numbers.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>(t.tensor(<span class="bu">range</span>(<span class="dv">1</span>,<span class="dv">10</span>)).reshape(<span class="dv">3</span>, <span class="dv">3</span>)<span class="op">*</span><span class="dv">2</span>)[<span class="dv">1</span>:<span class="dv">3</span>,<span class="dv">1</span>:<span class="dv">3</span>]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>tensor([[<span class="dv">10</span>,  <span class="dv">12</span>],</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>         <span class="dv">16</span>, <span class="dv">18</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
+<li><p>What is broadcasting?</p></li>
+<li><p>Are metrics generally calculated using the training set, or the validation set? Why?</p></li>
+<li><p>What is SGD?</p>
+<p>SGD is stochastic gradient descent.</p></li>
+<li><p>Why does SGD use mini-batches?</p>
+<p>We can more quickly compute new parameters with smaller steps. These smaller steps are mini-batches. They are less accurate than running the full batch, but faster. They are also more likely to be runnable on GPU accelerated systems, where memory is limited.</p></li>
+<li><p>What are the seven steps in SGD for machine learning?</p>
+<ol type="1">
+<li>init: Initialize our weights</li>
+<li>predict: For a given weight, predict the next value</li>
+<li>loss: Compute the loss from our prediction</li>
+<li>gradient: Compute the gradient for how much our loss would change for a small change to a weight</li>
+<li>step: Update our weight</li>
+<li>repeat: return to predict to continue the process</li>
+<li>stop: cease learning</li>
+</ol></li>
+<li><p>How do we initialize the weights in a model?</p></li>
+<li><p>What is “loss”?</p>
+<p>Loss is a computation of how good the model is doing by measuring predictions vs.&nbsp;actuals.</p></li>
+<li><p>Why can’t we always use a high learning rate?</p>
+<p>If the model learns too quickly it will pass or oscillate around the optimal weights. Also, if the learning rate is too high, we may overfit our model.</p></li>
+<li><p>What is a “gradient”?</p>
+<p>A gradient is a computation of how much our loss would change by making a small change to a weight.</p></li>
+</ol>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+      <div class="nav-footer-center">© Tim Beck, 2022. All Rights Reserved.</div>
+  </div>
+</footer>
+
+
+
+</body></html>

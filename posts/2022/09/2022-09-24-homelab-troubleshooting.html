@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.251">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Tim Beck">
+<meta name="dcterms.date" content="2022-09-24">
+
+<title>Tim’s Blog - Homelab Troubleshooting</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Tim’s Blog</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html">About</a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../posts/">Posts</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/tmbeck"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://linkedin.com/in/tmbeck"><i class="bi bi-linkedin" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Homelab Troubleshooting</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">homelab</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Tim Beck </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 24, 2022</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#homelab-troubleshooting" id="toc-homelab-troubleshooting" class="nav-link active" data-scroll-target="#homelab-troubleshooting">Homelab Troubleshooting</a>
+  <ul class="collapse">
+  <li><a href="#hdds-not-enumerating" id="toc-hdds-not-enumerating" class="nav-link" data-scroll-target="#hdds-not-enumerating">HDDs not enumerating</a></li>
+  <li><a href="#unexpected-serial-port-changes" id="toc-unexpected-serial-port-changes" class="nav-link" data-scroll-target="#unexpected-serial-port-changes">Unexpected serial port changes</a></li>
+  <li><a href="#mysterious-boot-failure" id="toc-mysterious-boot-failure" class="nav-link" data-scroll-target="#mysterious-boot-failure">Mysterious Boot Failure</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<section id="homelab-troubleshooting" class="level1">
+<h1>Homelab Troubleshooting</h1>
+<p>I spent today debugging several issues I’ve had with a server in my homelab. The server happens to be part of a <a href="https://www.proxmox.com/en/">proxmox</a> cluster, making the issues more annoying.</p>
+<section id="hdds-not-enumerating" class="level2">
+<h2 class="anchored" data-anchor-id="hdds-not-enumerating">HDDs not enumerating</h2>
+<p>I have four SATA HDDs in a USB-C enclosure attached to the host. The four drives are part of a zfs raidz volume that are identified by their <a href="https://en.wikipedia.org/wiki/World_Wide_Name">World Wide Name</a> (<code>wwn</code>).</p>
+<p>Occassionally, when the system reboots or powers on, only three of the four disks have a their <code>wwn-</code> symlink appear in <code>/dev/disk/by-id/</code>.</p>
+<pre><code>lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50014ee210f452db -&gt; ../../sdk
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee210f452db-part1 -&gt; ../../sdk1
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee210f452db-part9 -&gt; ../../sdk9
+lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50014ee2664999d1 -&gt; ../../sdj
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2664999d1-part1 -&gt; ../../sdj1
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2664999d1-part9 -&gt; ../../sdj9
+lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50014ee2bb9f24e0 -&gt; ../../sdl
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2bb9f24e0-part1 -&gt; ../../sdl1
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2bb9f24e0-part9 -&gt; ../../sdl9
+lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50025385a013ece8 -&gt; ../../sdi</code></pre>
+<p>This results in the pool being degraded:</p>
+<pre><code>root@pve1:/sys/bus/pci_express/devices# zpool status
+  pool: tank
+ state: DEGRADED
+status: One or more devices could not be used because the label is missing or
+        invalid.  Sufficient replicas exist for the pool to continue
+        functioning in a degraded state.
+action: Replace the device using 'zpool replace'.
+   see: https://openzfs.github.io/openzfs-docs/msg/ZFS-8000-4J
+  scan: resilvered 1.19G in 00:00:28 with 0 errors on Tue Sep 20 08:55:45 2022
+config:
+
+        NAME                        STATE     READ WRITE CKSUM
+        tank                        DEGRADED     0     0     0
+          raidz1-0                  DEGRADED     0     0     0
+            wwn-0x50014ee2664999d1  ONLINE       0     0     0
+            wwn-0x50014ee210f452db  ONLINE       0     0     0
+            wwn-0x50014ee2bb9f24e0  ONLINE       0     0     0
+            wwn-0x50014ee210f434b7  UNAVAIL      0     0     0
+
+errors: No known data errors</code></pre>
+<p>Up until today I’ve been lazy and solving it by shutting down the system, powering down the enclosure, powering up the enclosure, and then turning on the system. This has reliably ensured that the enclosure and pool starts correctly.</p>
+<pre><code>root@pve1:/sys/class/scsi_disk# echo "- - -" | tee /sys/class/scsi_host/host1{0,1,2,3}/scan
+- - -
+root@pve1:/sys/class/scsi_disk# sudo udevadm trigger</code></pre>
+<p>Afterwards in <code>/dev/disk/by-id/</code>.</p>
+<pre><code>lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee210f434b7 -&gt; ../../sdm
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f434b7-part1 -&gt; ../../sdm1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f434b7-part9 -&gt; ../../sdm9
+lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee210f452db -&gt; ../../sdk
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f452db-part1 -&gt; ../../sdk1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f452db-part9 -&gt; ../../sdk9
+lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee2664999d1 -&gt; ../../sdj
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2664999d1-part1 -&gt; ../../sdj1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2664999d1-part9 -&gt; ../../sdj9
+lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee2bb9f24e0 -&gt; ../../sdl
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2bb9f24e0-part1 -&gt; ../../sdl1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2bb9f24e0-part9 -&gt; ../../sdl9</code></pre>
+<p>And the array automatically resilvers:</p>
+<pre><code>root@pve1:~# zpool status
+  pool: tank
+ state: ONLINE
+  scan: resilvered 29.6M in 00:00:03 with 0 errors on Sat Sep 24 09:56:38 2022
+config:
+
+        NAME                        STATE     READ WRITE CKSUM
+        tank                        ONLINE       0     0     0
+          raidz1-0                  ONLINE       0     0     0
+            wwn-0x50014ee2664999d1  ONLINE       0     0     0
+            wwn-0x50014ee210f452db  ONLINE       0     0     0
+            wwn-0x50014ee2bb9f24e0  ONLINE       0     0     0
+            wwn-0x50014ee210f434b7  ONLINE       0     0     0
+
+errors: No known data errors</code></pre>
+</section>
+<section id="unexpected-serial-port-changes" class="level2">
+<h2 class="anchored" data-anchor-id="unexpected-serial-port-changes">Unexpected serial port changes</h2>
+<p>My server has a serial port that I can use as a console, but I was surprised to find that after <code>systemd</code> began starting up, the console would stop working. <code>grub</code> and the kernel output worked fine.</p>
+<p>I checked the serial port and noticed that the baud rate switched from the kernel command line setting of `` to a much lower speed:</p>
+<pre><code>root@pve1:~# stty -a -F /dev/ttyS0
+speed 1200 baud; rows 24; columns 80; line = 0;
+intr = ^C; quit = ^\; erase = ^?; kill = ^U; eof = ^D; eol = &lt;undef&gt;; eol2 = &lt;undef&gt;; swtch = &lt;undef&gt;; start = ^Q;
+stop = ^S; susp = ^Z; rprnt = ^R; werase = ^W; lnext = ^V; discard = ^O; min = 0; time = 5;
+-parenb -parodd -cmspar cs8 -hupcl -cstopb cread clocal -crtscts
+ignbrk -brkint ignpar -parmrk -inpck -istrip -inlcr -igncr -icrnl -ixon -ixoff -iuclc -ixany -imaxbel -iutf8
+-opost -olcuc -ocrnl -onlcr -onocr -onlret -ofill -ofdel nl0 cr0 tab0 bs0 vt0 ff0
+-isig -icanon -iexten -echo -echoe -echok -echonl -noflsh -xcase -tostop -echoprt -echoctl -echoke -flusho -extproc
+root@pve1:~# stty -a -F /dev/ttyS0
+speed 2400 baud; rows 24; columns 80; line = 0;
+intr = ^C; quit = ^\; erase = ^?; kill = ^U; eof = ^D; eol = &lt;undef&gt;; eol2 = &lt;undef&gt;; swtch = &lt;undef&gt;; start = ^Q;
+stop = ^S; susp = ^Z; rprnt = ^R; werase = ^W; lnext = ^V; discard = ^O; min = 0; time = 5;
+-parenb -parodd -cmspar cs8 -hupcl -cstopb cread clocal -crtscts
+ignbrk -brkint ignpar -parmrk -inpck -istrip -inlcr -igncr -icrnl -ixon -ixoff -iuclc -ixany -imaxbel -iutf8
+-opost -olcuc -ocrnl -onlcr -onocr -onlret -ofill -ofdel nl0 cr0 tab0 bs0 vt0 ff0
+-isig -icanon -iexten -echo -echoe -echok -echonl -noflsh -xcase -tostop -echoprt -echoctl -echoke -flusho -extproc</code></pre>
+<p>Setting the baud rate manually to 115200 would make it briefly work:</p>
+<pre><code>root@pve1:~# stty -F /dev/ttyS0 115200</code></pre>
+<p>But after 10 seconds or so the console would revert back to 1200 and the output in the console would not work.</p>
+<p>Turns out the problem was my UPS monitoring software, pwrstatd:</p>
+<pre><code>root@pve1:~# lsof -n | grep ttyS0
+pwrstatd   4892                             root    4u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    0u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    1u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    2u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    4r  a_inode               0,14            0      12461 inotify</code></pre>
+<p>I modified <code>/etc/pwrstatd.conf</code>:</p>
+<pre><code>allowed-device-nodes = libusb</code></pre>
+<p>But that didn’t fix it. I tried another setting:</p>
+<pre><code>allowed-device-nodes = libusb;hiddev;ttyUSB</code></pre>
+<p>And the service stopped trying to access <code>/dev/ttyS0</code>:</p>
+<pre><code>root@pve1:~# lsof -n | grep ttyS0
+agetty    89648                             root    0u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty    89648                             root    1u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty    89648                             root    2u      CHR               4,64          0t0         89 /dev/ttyS0</code></pre>
+<p>Yay. Restarted getty and success!</p>
+<pre><code>root@pve1:~# systemctl stop serial-getty@ttyS0.service
+root@pve1:~# systemctl start serial-getty@ttyS0.service</code></pre>
+</section>
+<section id="mysterious-boot-failure" class="level2">
+<h2 class="anchored" data-anchor-id="mysterious-boot-failure">Mysterious Boot Failure</h2>
+<p>The same proxmox server runs a headless setup; I somehow got it to boot even though a Mellanox ConnectX-3 adapter is installed.</p>
+<p>After updating the kernel I noticed that the system didn’t come back up. The serial console didn’t even show output from grub, so there was either a significant hardware problem or the bootloader had somehow become corrupted. I tried power cycling it several times but it would never boot. Finally I replaced the Mellanox card with an old video card so I could see what’s going on.</p>
+<p>Apparently during a previous power cycle the LSI Megaraid 9260-8i card had an unclean shutdown and was not able to flush its write cache. The card decided to let me know by prompting me to press any key to continue or to press ‘C’ to enter the configuration utiltiy. The prompt is a one time event (per occurrence, I’m sure), so after pressing spacebar and verifying grub came up, I tested that grub would come up after a reboot, then restored the Mellanox card. The system booted up fine after that.</p>
+<pre><code>Cache data was lost due to an unexpected power-off or reboot during a write operation, but the adapter has recovered. This could be due to a memory problem, bad battery, or you may not have a bettery installed.
+Press any key to continue or 'C' to load the configuration utility.</code></pre>
+<p>Recently the LSI card had a <a href="https://www.amazon.com/gp/product/B07PGZ1R12">BBU-iBBU08 battery pack</a> installed, but I removed it when I noticed significant bulging on the side of the battery pack. I bought the battery pack three years ago so it had a good run.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+      <div class="nav-footer-center">© Tim Beck, 2022. All Rights Reserved.</div>
+  </div>
+</footer>
+
+
+
+</body></html>

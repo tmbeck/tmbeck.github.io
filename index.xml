@@ -1,0 +1,1989 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>Tim's Blog</title>
+<link>https://www.tbeck.io/blog/index.html</link>
+<atom:link href="https://www.tbeck.io/blog/index.xml" rel="self" type="application/rss+xml"/>
+<description></description>
+<generator>quarto-1.1.251</generator>
+<lastBuildDate>Sat, 24 Sep 2022 07:00:00 GMT</lastBuildDate>
+<item>
+  <title>Homelab Troubleshooting</title>
+  <dc:creator>Tim Beck</dc:creator>
+  <link>https://www.tbeck.io/blog/posts/2022/09/2022-09-24-homelab-troubleshooting.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="homelab-troubleshooting" class="level1">
+<h1>Homelab Troubleshooting</h1>
+<p>I spent today debugging several issues I’ve had with a server in my homelab. The server happens to be part of a <a href="https://www.proxmox.com/en/">proxmox</a> cluster, making the issues more annoying.</p>
+<section id="hdds-not-enumerating" class="level2">
+<h2 class="anchored" data-anchor-id="hdds-not-enumerating">HDDs not enumerating</h2>
+<p>I have four SATA HDDs in a USB-C enclosure attached to the host. The four drives are part of a zfs raidz volume that are identified by their <a href="https://en.wikipedia.org/wiki/World_Wide_Name">World Wide Name</a> (<code>wwn</code>).</p>
+<p>Occassionally, when the system reboots or powers on, only three of the four disks have a their <code>wwn-</code> symlink appear in <code>/dev/disk/by-id/</code>.</p>
+<pre><code>lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50014ee210f452db -&gt; ../../sdk
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee210f452db-part1 -&gt; ../../sdk1
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee210f452db-part9 -&gt; ../../sdk9
+lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50014ee2664999d1 -&gt; ../../sdj
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2664999d1-part1 -&gt; ../../sdj1
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2664999d1-part9 -&gt; ../../sdj9
+lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50014ee2bb9f24e0 -&gt; ../../sdl
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2bb9f24e0-part1 -&gt; ../../sdl1
+lrwxrwxrwx 1 root root 10 Sep 24 09:41 wwn-0x50014ee2bb9f24e0-part9 -&gt; ../../sdl9
+lrwxrwxrwx 1 root root  9 Sep 24 09:41 wwn-0x50025385a013ece8 -&gt; ../../sdi</code></pre>
+<p>This results in the pool being degraded:</p>
+<pre><code>root@pve1:/sys/bus/pci_express/devices# zpool status
+  pool: tank
+ state: DEGRADED
+status: One or more devices could not be used because the label is missing or
+        invalid.  Sufficient replicas exist for the pool to continue
+        functioning in a degraded state.
+action: Replace the device using 'zpool replace'.
+   see: https://openzfs.github.io/openzfs-docs/msg/ZFS-8000-4J
+  scan: resilvered 1.19G in 00:00:28 with 0 errors on Tue Sep 20 08:55:45 2022
+config:
+
+        NAME                        STATE     READ WRITE CKSUM
+        tank                        DEGRADED     0     0     0
+          raidz1-0                  DEGRADED     0     0     0
+            wwn-0x50014ee2664999d1  ONLINE       0     0     0
+            wwn-0x50014ee210f452db  ONLINE       0     0     0
+            wwn-0x50014ee2bb9f24e0  ONLINE       0     0     0
+            wwn-0x50014ee210f434b7  UNAVAIL      0     0     0
+
+errors: No known data errors</code></pre>
+<p>Up until today I’ve been lazy and solving it by shutting down the system, powering down the enclosure, powering up the enclosure, and then turning on the system. This has reliably ensured that the enclosure and pool starts correctly.</p>
+<pre><code>root@pve1:/sys/class/scsi_disk# echo "- - -" | tee /sys/class/scsi_host/host1{0,1,2,3}/scan
+- - -
+root@pve1:/sys/class/scsi_disk# sudo udevadm trigger</code></pre>
+<p>Afterwards in <code>/dev/disk/by-id/</code>.</p>
+<pre><code>lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee210f434b7 -&gt; ../../sdm
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f434b7-part1 -&gt; ../../sdm1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f434b7-part9 -&gt; ../../sdm9
+lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee210f452db -&gt; ../../sdk
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f452db-part1 -&gt; ../../sdk1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee210f452db-part9 -&gt; ../../sdk9
+lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee2664999d1 -&gt; ../../sdj
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2664999d1-part1 -&gt; ../../sdj1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2664999d1-part9 -&gt; ../../sdj9
+lrwxrwxrwx 1 root root  9 Sep 24 09:56 wwn-0x50014ee2bb9f24e0 -&gt; ../../sdl
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2bb9f24e0-part1 -&gt; ../../sdl1
+lrwxrwxrwx 1 root root 10 Sep 24 09:56 wwn-0x50014ee2bb9f24e0-part9 -&gt; ../../sdl9</code></pre>
+<p>And the array automatically resilvers:</p>
+<pre><code>root@pve1:~# zpool status
+  pool: tank
+ state: ONLINE
+  scan: resilvered 29.6M in 00:00:03 with 0 errors on Sat Sep 24 09:56:38 2022
+config:
+
+        NAME                        STATE     READ WRITE CKSUM
+        tank                        ONLINE       0     0     0
+          raidz1-0                  ONLINE       0     0     0
+            wwn-0x50014ee2664999d1  ONLINE       0     0     0
+            wwn-0x50014ee210f452db  ONLINE       0     0     0
+            wwn-0x50014ee2bb9f24e0  ONLINE       0     0     0
+            wwn-0x50014ee210f434b7  ONLINE       0     0     0
+
+errors: No known data errors</code></pre>
+</section>
+<section id="unexpected-serial-port-changes" class="level2">
+<h2 class="anchored" data-anchor-id="unexpected-serial-port-changes">Unexpected serial port changes</h2>
+<p>My server has a serial port that I can use as a console, but I was surprised to find that after <code>systemd</code> began starting up, the console would stop working. <code>grub</code> and the kernel output worked fine.</p>
+<p>I checked the serial port and noticed that the baud rate switched from the kernel command line setting of `` to a much lower speed:</p>
+<pre><code>root@pve1:~# stty -a -F /dev/ttyS0
+speed 1200 baud; rows 24; columns 80; line = 0;
+intr = ^C; quit = ^\; erase = ^?; kill = ^U; eof = ^D; eol = &lt;undef&gt;; eol2 = &lt;undef&gt;; swtch = &lt;undef&gt;; start = ^Q;
+stop = ^S; susp = ^Z; rprnt = ^R; werase = ^W; lnext = ^V; discard = ^O; min = 0; time = 5;
+-parenb -parodd -cmspar cs8 -hupcl -cstopb cread clocal -crtscts
+ignbrk -brkint ignpar -parmrk -inpck -istrip -inlcr -igncr -icrnl -ixon -ixoff -iuclc -ixany -imaxbel -iutf8
+-opost -olcuc -ocrnl -onlcr -onocr -onlret -ofill -ofdel nl0 cr0 tab0 bs0 vt0 ff0
+-isig -icanon -iexten -echo -echoe -echok -echonl -noflsh -xcase -tostop -echoprt -echoctl -echoke -flusho -extproc
+root@pve1:~# stty -a -F /dev/ttyS0
+speed 2400 baud; rows 24; columns 80; line = 0;
+intr = ^C; quit = ^\; erase = ^?; kill = ^U; eof = ^D; eol = &lt;undef&gt;; eol2 = &lt;undef&gt;; swtch = &lt;undef&gt;; start = ^Q;
+stop = ^S; susp = ^Z; rprnt = ^R; werase = ^W; lnext = ^V; discard = ^O; min = 0; time = 5;
+-parenb -parodd -cmspar cs8 -hupcl -cstopb cread clocal -crtscts
+ignbrk -brkint ignpar -parmrk -inpck -istrip -inlcr -igncr -icrnl -ixon -ixoff -iuclc -ixany -imaxbel -iutf8
+-opost -olcuc -ocrnl -onlcr -onocr -onlret -ofill -ofdel nl0 cr0 tab0 bs0 vt0 ff0
+-isig -icanon -iexten -echo -echoe -echok -echonl -noflsh -xcase -tostop -echoprt -echoctl -echoke -flusho -extproc</code></pre>
+<p>Setting the baud rate manually to 115200 would make it briefly work:</p>
+<pre><code>root@pve1:~# stty -F /dev/ttyS0 115200</code></pre>
+<p>But after 10 seconds or so the console would revert back to 1200 and the output in the console would not work.</p>
+<p>Turns out the problem was my UPS monitoring software, pwrstatd:</p>
+<pre><code>root@pve1:~# lsof -n | grep ttyS0
+pwrstatd   4892                             root    4u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    0u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    1u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    2u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty     4927                             root    4r  a_inode               0,14            0      12461 inotify</code></pre>
+<p>I modified <code>/etc/pwrstatd.conf</code>:</p>
+<pre><code>allowed-device-nodes = libusb</code></pre>
+<p>But that didn’t fix it. I tried another setting:</p>
+<pre><code>allowed-device-nodes = libusb;hiddev;ttyUSB</code></pre>
+<p>And the service stopped trying to access <code>/dev/ttyS0</code>:</p>
+<pre><code>root@pve1:~# lsof -n | grep ttyS0
+agetty    89648                             root    0u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty    89648                             root    1u      CHR               4,64          0t0         89 /dev/ttyS0
+agetty    89648                             root    2u      CHR               4,64          0t0         89 /dev/ttyS0</code></pre>
+<p>Yay. Restarted getty and success!</p>
+<pre><code>root@pve1:~# systemctl stop serial-getty@ttyS0.service
+root@pve1:~# systemctl start serial-getty@ttyS0.service</code></pre>
+</section>
+<section id="mysterious-boot-failure" class="level2">
+<h2 class="anchored" data-anchor-id="mysterious-boot-failure">Mysterious Boot Failure</h2>
+<p>The same proxmox server runs a headless setup; I somehow got it to boot even though a Mellanox ConnectX-3 adapter is installed.</p>
+<p>After updating the kernel I noticed that the system didn’t come back up. The serial console didn’t even show output from grub, so there was either a significant hardware problem or the bootloader had somehow become corrupted. I tried power cycling it several times but it would never boot. Finally I replaced the Mellanox card with an old video card so I could see what’s going on.</p>
+<p>Apparently during a previous power cycle the LSI Megaraid 9260-8i card had an unclean shutdown and was not able to flush its write cache. The card decided to let me know by prompting me to press any key to continue or to press ‘C’ to enter the configuration utiltiy. The prompt is a one time event (per occurrence, I’m sure), so after pressing spacebar and verifying grub came up, I tested that grub would come up after a reboot, then restored the Mellanox card. The system booted up fine after that.</p>
+<pre><code>Cache data was lost due to an unexpected power-off or reboot during a write operation, but the adapter has recovered. This could be due to a memory problem, bad battery, or you may not have a bettery installed.
+Press any key to continue or 'C' to load the configuration utility.</code></pre>
+<p>Recently the LSI card had a <a href="https://www.amazon.com/gp/product/B07PGZ1R12">BBU-iBBU08 battery pack</a> installed, but I removed it when I noticed significant bulging on the side of the battery pack. I bought the battery pack three years ago so it had a good run.</p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>homelab</category>
+  <guid>https://www.tbeck.io/blog/posts/2022/09/2022-09-24-homelab-troubleshooting.html</guid>
+  <pubDate>Sat, 24 Sep 2022 07:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Migration from fastpages</title>
+  <dc:creator>Tim Beck</dc:creator>
+  <link>https://www.tbeck.io/blog/posts/migration/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Today I migrated the old blog from <a href="https://forums.fast.ai/t/fastpages-deprecating-fastpages-in-favor-of-quarto/99095/1">fastpages</a> to <a href="https://quarto.org/">Quarto</a>.</p>
+<p>Quarto works a bit different than fastpages, but I’m excited that it’s being actively developed.</p>
+<p><img src="https://www.tbeck.io/blog/posts/migration/thumbnail.jpg" class="img-fluid"></p>
+<p>Since this post doesn’t specify an explicit <code>image</code>, the first image in the post will be used in the listing page of posts.</p>
+
+
+
+ ]]></description>
+  <category>news</category>
+  <guid>https://www.tbeck.io/blog/posts/migration/index.html</guid>
+  <pubDate>Sat, 24 Sep 2022 07:00:00 GMT</pubDate>
+  <media:content url="https://www.tbeck.io/blog/posts/migration/thumbnail.jpg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Post With Code</title>
+  <dc:creator>Harlow Malloc</dc:creator>
+  <link>https://www.tbeck.io/blog/posts/post-with-code/index.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>This is a post with executable code.</p>
+
+
+
+ ]]></description>
+  <category>news</category>
+  <category>code</category>
+  <category>analysis</category>
+  <guid>https://www.tbeck.io/blog/posts/post-with-code/index.html</guid>
+  <pubDate>Sat, 24 Sep 2022 07:00:00 GMT</pubDate>
+  <media:content url="https://www.tbeck.io/blog/posts/post-with-code/image.jpg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Production from Scratch - fastai Lesson 3</title>
+  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-fossils-production.html</link>
+  <description><![CDATA[ 
+
+
+
+<div class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;">import</span> fastbook</span>
+<span id="cb1-2">fastbook.setup_book()</span></code></pre></div>
+</div>
+<p>Retrieve files of our subject from bing image search. The images we search for are downloaded locally.</p>
+<div class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1">key <span class="op" style="color: #5E5E5E;">=</span> os.environ.get(<span class="st" style="color: #20794D;">'AZURE_SEARCH_KEY'</span>, <span class="st" style="color: #20794D;">'xyz'</span>)</span></code></pre></div>
+</div>
+<div class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1">results <span class="op" style="color: #5E5E5E;">=</span> search_images_bing(key, <span class="st" style="color: #20794D;">'trilobite'</span>)</span>
+<span id="cb3-2">ims <span class="op" style="color: #5E5E5E;">=</span> results.attrgot(<span class="st" style="color: #20794D;">'content_url'</span>)</span>
+<span id="cb3-3"><span class="bu" style="color: null;">len</span>(ims)</span></code></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="6">
+<pre><code>150</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1">fossil_types <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">'trilobite'</span>, <span class="st" style="color: #20794D;">'crinoid'</span>, <span class="st" style="color: #20794D;">'bivalve'</span></span>
+<span id="cb5-2">path <span class="op" style="color: #5E5E5E;">=</span> Path(<span class="st" style="color: #20794D;">'critters'</span>)</span></code></pre></div>
+</div>
+<div class="cell" data-execution_count="40">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><span class="cf" style="color: #003B4F;">for</span> o <span class="kw" style="color: #003B4F;">in</span> fossil_types:</span>
+<span id="cb6-2">    dest <span class="op" style="color: #5E5E5E;">=</span> (path<span class="op" style="color: #5E5E5E;">/</span>o)</span>
+<span id="cb6-3">    <span class="cf" style="color: #003B4F;">if</span> <span class="kw" style="color: #003B4F;">not</span> dest.exists():</span>
+<span id="cb6-4">        dest.mkdir(exist_ok<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">True</span>)</span>
+<span id="cb6-5">        results <span class="op" style="color: #5E5E5E;">=</span> search_images_bing(key, <span class="ss" style="color: #20794D;">f'</span><span class="sc" style="color: #5E5E5E;">{</span>o<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;"> fossil'</span>)</span>
+<span id="cb6-6">        download_images(dest, urls<span class="op" style="color: #5E5E5E;">=</span>results.attrgot(<span class="st" style="color: #20794D;">'content_url'</span>))</span></code></pre></div>
+<div class="cell-output cell-output-display">
+
+</div>
+<div class="cell-output cell-output-display">
+
+</div>
+</div>
+<p>Some post processing cleanup might be required to remove empty files, html data, or files that are encoded in a format that PIL cannot understand (such as VP8). They might say they are ‘.jpg’ files, but that does NOT mean that they are!</p>
+<p>fastai has a handy <code>get_image_files()</code> function that will recursively identify images and return them as a list and a <code>verify_images()</code> which returns a list of images that are not up to snuff. Then, we use <code>L.map()</code> to unlink (remove) any files in the failed images list.</p>
+<div class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1">fns <span class="op" style="color: #5E5E5E;">=</span> get_image_files(path)</span>
+<span id="cb7-2">fns</span></code></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<pre><code>(#437) [Path('critters/trilobite/00000001.jpg'),Path('critters/trilobite/00000000.jpg'),Path('critters/trilobite/00000004.jpg'),Path('critters/trilobite/00000005.jpg'),Path('critters/trilobite/00000002.jpg'),Path('critters/trilobite/00000007.jpg'),Path('critters/trilobite/00000006.jpg'),Path('critters/trilobite/00000013.jpg'),Path('critters/trilobite/00000008.jpg'),Path('critters/trilobite/00000011.jpg')...]</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1">failed <span class="op" style="color: #5E5E5E;">=</span> verify_images(fns)</span>
+<span id="cb9-2">failed</span></code></pre></div>
+<div class="cell-output cell-output-display">
+
+</div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<pre><code>(#0) []</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1">failed.<span class="bu" style="color: null;">map</span>(Path.unlink)<span class="op" style="color: #5E5E5E;">;</span></span></code></pre></div>
+</div>
+<p>Time to take a look at the images we’ve downloaded. fastai has a handy <code>show_batch()</code> function for its ImageDataLoaders objects so we can get a preview of the images inside jupyter. We must specify <code>item_tfms=</code> or else the widget will not be able to render the wide variety of image resolutions that have been downloaded.</p>
+<div class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1">dls <span class="op" style="color: #5E5E5E;">=</span> ImageDataLoaders.from_folder(path<span class="op" style="color: #5E5E5E;">/</span><span class="st" style="color: #20794D;">'crinoid'</span>, valid_pct<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.2</span>, item_tfms<span class="op" style="color: #5E5E5E;">=</span>Resize(<span class="dv" style="color: #AD0000;">256</span>))</span>
+<span id="cb12-2">dls.valid_ds.items[:<span class="dv" style="color: #AD0000;">3</span>]</span></code></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<pre><code>[Path('critters/crinoid/00000087.jpg'),
+ Path('critters/crinoid/00000065.jpg'),
+ Path('critters/crinoid/00000045.jpg')]</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1">dls.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">40</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">4</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-12-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1">dls <span class="op" style="color: #5E5E5E;">=</span> ImageDataLoaders.from_folder(path<span class="op" style="color: #5E5E5E;">/</span><span class="st" style="color: #20794D;">'trilobite'</span>, valid_pct<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.2</span>, item_tfms<span class="op" style="color: #5E5E5E;">=</span>Resize(<span class="dv" style="color: #AD0000;">256</span>))</span>
+<span id="cb15-2">dls.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">40</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">4</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-13-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1">dls <span class="op" style="color: #5E5E5E;">=</span> ImageDataLoaders.from_folder(path<span class="op" style="color: #5E5E5E;">/</span><span class="st" style="color: #20794D;">'bivalve'</span>, valid_pct<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.2</span>, item_tfms<span class="op" style="color: #5E5E5E;">=</span>Resize(<span class="dv" style="color: #AD0000;">256</span>))</span>
+<span id="cb16-2">dls.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">40</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">4</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>We are now ready to create a DataBlock. The DataBlock will contain our images and labels; it will need to know how to ‘find’ the items, how to separate them into a training set and a validation set, where to get the dependent variable from (the label, e.g.&nbsp;the directory they are in), and last how to transform the image so that we can run CUDA on it.</p>
+<div class="cell" data-execution_count="20">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1">critters <span class="op" style="color: #5E5E5E;">=</span> DataBlock(</span>
+<span id="cb17-2">    blocks<span class="op" style="color: #5E5E5E;">=</span>(ImageBlock, CategoryBlock), </span>
+<span id="cb17-3">    get_items<span class="op" style="color: #5E5E5E;">=</span>get_image_files, </span>
+<span id="cb17-4">    splitter<span class="op" style="color: #5E5E5E;">=</span>RandomSplitter(valid_pct<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.2</span>, seed<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">42</span>),</span>
+<span id="cb17-5">    get_y<span class="op" style="color: #5E5E5E;">=</span>parent_label,</span>
+<span id="cb17-6">    item_tfms<span class="op" style="color: #5E5E5E;">=</span>RandomResizedCrop(<span class="dv" style="color: #AD0000;">256</span>, min_scale<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.3</span>))</span></code></pre></div>
+</div>
+<p>The data block has not yet seen our data, so lets show it the data.</p>
+<div class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1">dls <span class="op" style="color: #5E5E5E;">=</span> critters.dataloaders(path, bs<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">64</span>)</span></code></pre></div>
+</div>
+<div class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1">dls.valid.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">10</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-17-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1">dls.train.show_batch(max_n<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">10</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-18-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="22">
+<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1">learn <span class="op" style="color: #5E5E5E;">=</span> cnn_learner(dls, resnet34, metrics<span class="op" style="color: #5E5E5E;">=</span>error_rate)</span>
+<span id="cb21-2">learn.fine_tune(<span class="dv" style="color: #AD0000;">3</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+
+<table class="dataframe table table-sm table-striped">
+  <thead>
+    <tr>
+      <th>epoch</th>
+      <th>train_loss</th>
+      <th>valid_loss</th>
+      <th>error_rate</th>
+      <th>time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>1.940702</td>
+      <td>0.609582</td>
+      <td>0.244186</td>
+      <td>00:09</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<div class="cell-output cell-output-display">
+
+<table class="dataframe table table-sm table-striped">
+  <thead>
+    <tr>
+      <th>epoch</th>
+      <th>train_loss</th>
+      <th>valid_loss</th>
+      <th>error_rate</th>
+      <th>time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>0.762174</td>
+      <td>0.398268</td>
+      <td>0.197674</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>0.567270</td>
+      <td>0.371190</td>
+      <td>0.151163</td>
+      <td>00:12</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>0.462896</td>
+      <td>0.349624</td>
+      <td>0.139535</td>
+      <td>00:12</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<div class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1">interp <span class="op" style="color: #5E5E5E;">=</span> ClassificationInterpretation.from_learner(learn)</span>
+<span id="cb22-2">interp.plot_confusion_matrix()</span></code></pre></div>
+<div class="cell-output cell-output-display">
+
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-20-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1">interp.plot_top_losses(<span class="dv" style="color: #AD0000;">10</span>, nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-Fossils-Production_files/figure-html/cell-21-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1">cleaner <span class="op" style="color: #5E5E5E;">=</span> ImageClassifierCleaner(learn)</span>
+<span id="cb24-2">cleaner</span></code></pre></div>
+<div class="cell-output cell-output-display">
+
+</div>
+<div class="cell-output cell-output-display">
+
+</div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"d94917d797214083ae0c1418843d61b8","version_major":2,"version_minor":0}
+</script>
+</div>
+</div>
+<div class="cell" data-execution_count="25">
+<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1">learn.export()</span>
+<span id="cb25-2"><span class="co" style="color: #5E5E5E;">#path.ls(file_exts='.pkl')</span></span></code></pre></div>
+</div>
+<div class="cell" data-execution_count="26">
+<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1">p <span class="op" style="color: #5E5E5E;">=</span> Path()</span>
+<span id="cb26-2">p.ls(file_exts<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'.pkl'</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="26">
+<pre><code>(#1) [Path('export.pkl')]</code></pre>
+</div>
+</div>
+<p>I had some cleanup issues when using the <code>ImageClassifierCleaner()</code> class. After using the widget and then invoking the <code>for</code> loops to unlink and move the images, it threw an exception because filenames already existed. It appears it had problems counting the images/moving the files due to name collisions. It also wasn’t clear what to do after cleaning the dataset - simply running <code>learn.fine_tune(1)</code> did not work since the dataset had changed, so I reinitialized the datablock and retrained the model. This improved performance from an error rate of about 17% to about 14%.</p>
+
+
+
+ ]]></description>
+  <category>fossils</category>
+  <category>jupyter</category>
+  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-18-fossils-production.html</guid>
+  <pubDate>Fri, 18 Sep 2020 07:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>fastai v4: Lesson 3</title>
+  <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
+  <link>https://www.tbeck.io/blog/posts/2020/09/2020-09-16-lesson-3.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="lesson-3" class="level1">
+<h1>Lesson 3</h1>
+<p>Notes from fastai lesson 3, which is Chapter 4 in the book (the end of Ch. 2 is a “choose your own adventure” where you can continue on to Ch. 3, Data Ethics, or Ch. 4, Under the Hood: Training a Digit Classifier). The video lessons pick up at Ch. 4. But After reading much of Ch. 3, I find the Ethics to be an intriguing topic, especially for leaders of data science organizations, where failure to consider Data Ethics might put your organization (or at least its reputation) at risk.</p>
+<section id="links" class="level2">
+<h2 class="anchored" data-anchor-id="links">Links</h2>
+<ul>
+<li><a href="https://course.fast.ai/videos/?lesson=3">Lesson 3 Video</a></li>
+<li><a href="https://forums.fast.ai/">fastai Forum</a></li>
+<li><a href="http://jalammar.github.io/visual-numpy/">A visual intro to numpy and data representation</a></li>
+</ul>
+</section>
+<section id="notes" class="level2">
+<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<section id="from-chapter-4" class="level3">
+<h3 class="anchored" data-anchor-id="from-chapter-4">From Chapter 4</h3>
+<p>Covered images as arrays or tensors of pixels</p>
+<p>Cool trick:</p>
+<p>Visualizing greyscale images inside of a pandas df by specifying a background graident:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1">im3_t <span class="op" style="color: #5E5E5E;">=</span> tensor(im3)</span>
+<span id="cb1-2">df <span class="op" style="color: #5E5E5E;">=</span> pd.DataFrame(im3_t[<span class="dv" style="color: #AD0000;">4</span>:<span class="dv" style="color: #AD0000;">15</span>,<span class="dv" style="color: #AD0000;">4</span>:<span class="dv" style="color: #AD0000;">22</span>])</span>
+<span id="cb1-3">df.style.set_properties(<span class="op" style="color: #5E5E5E;">**</span>{<span class="st" style="color: #20794D;">'font-size'</span>:<span class="st" style="color: #20794D;">'6pt'</span>}).background_gradient(<span class="st" style="color: #20794D;">'Greys'</span>)</span></code></pre></div>
+<section id="stop-and-think" class="level4">
+<h4 class="anchored" data-anchor-id="stop-and-think">Stop and Think</h4>
+<blockquote class="blockquote">
+<p>…how a computer might be able to recognize these two digits. What kinds of features might it be able to look at? How might it be able to identify these features? How could it combine them?</p>
+</blockquote>
+<p>This isn’t a new topic for me as it overlaps with my <em>Signals &amp; Systems</em> coursework, as well as DSP.</p>
+<ul>
+<li>Most straightforward: sum(A-B) = similarity score, identical images == 0</li>
+<li>The above, but after running through edge detection (first derivative)</li>
+<li>Use a kerneling function step-wise compare the outputs of the kernel function between the two systems</li>
+</ul>
+<p>Measuring distance in vectors * L1 norm / mean absolute difference: abs(A-B).mean()</p>
+<pre><code>Use `F.l1_loss()`</code></pre>
+<ul>
+<li><p>L2 norm / root mean square error (RMSE): sqrt(mean((A-B)^2))</p>
+<p>Use <code>F.mse_loss()</code></p></li>
+</ul>
+<p>When computing <code>mean()</code> with tensors, <code>mean()</code> can take an optional tuple argument that specifies the range of axes over which to compute the mean.</p>
+<p>Much of this chapter covers an introduction to numpy and tensors. Vectors and matrices aren’t new to me, and even slicing n-dimensional arrays is familiar (I have previous experience in perl and C). But I was struggling with this in python, e.g.&nbsp;the difference between <code>[:,:]</code> and <code>[:][:]</code>. I found this article by Jay Alammar very helpful: <a href="http://jalammar.github.io/visual-numpy/">A visual intro to numpy and data representation</a> (thank you Jay!).</p>
+<p>Stochastic Gradient Descent (SGD)</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<figure class="figure">
+<img src="https://www.tbeck.io/blog/posts/2020/09/images/sgd.png" title="Stochastic Gradient Descent" class="img-fluid figure-img">
+</figure>
+<p></p><figcaption class="figure-caption">SGD</figcaption><p></p>
+</figure>
+</div>
+<p>So far our primitive model is little more than a math function with no memory and no feedback. To do better we need to be able to train it and to make changes to a set of weights so as to alter the next outcome of the model.</p>
+<p>Weights for each pixel. Could use the computed means as weights, where the flattened mean are weights.</p>
+<p>Consider the simple function <code>def pr_eight(x,w) = (x*w).sum()</code> where <code>x</code>, <code>w</code> are vectors for the independent variables and the weights, respectively. How would we make this a machine learning “8” classifier?</p>
+<ol type="1">
+<li>Need to init(w) - seeded rand()?</li>
+<li>For each image in our set, compute <code>x*w</code> e.g.&nbsp;make a prediction.</li>
+<li>Compute the loss of the model (actual vs.&nbsp;expected)</li>
+<li>Compute the gradient: a measure of change for each weight that changes the loss</li>
+<li>Update the weights</li>
+<li><code>goto</code> 2. until some condition (e.g.&nbsp;the model is good)</li>
+</ol>
+<p>Initialize</p>
+<p>Start with random. How would random compare against the <code>mean()</code> though?</p>
+<p>Loss</p>
+<p>The convention is that small loss == good, big loss == bad. So we want a function that will measure ourselves as such.</p>
+<p>Step</p>
+<p>This is a change to the weight that results in a new prediction. Weights can go up or down. Mentions using gradients (calculus). But not clear how to avoid things like local minimums…</p>
+<p>Stop</p>
+<p>How we know when to stop - e.g.&nbsp;such as when our model begins to get worse at its job.</p>
+</section>
+<section id="gradients" class="level4">
+<h4 class="anchored" data-anchor-id="gradients">Gradients</h4>
+<ul>
+<li>Gradients are a (continuous? since you must take at least the first derivative) function (used the quadratic y=x**2) with a local minimum (since there’s a stopping point where y’==0?). It’s also symmetric around an axis.</li>
+<li>A random value on the line is chosen (some x) as the initial value</li>
+<li>pytorch provides the <code>backward()</code> function to compute the gradient of a layer (array) of a network. This is the <em>backward pass</em> through the network. The <em>forward pass</em> is where the activation function is calculated.</li>
+<li>This is all handled through object-oriented “magic” in pytorch.</li>
+<li>stepping is done by altering the weights by your learning rate (<code>lr</code>) * the gradient of your weights. Recall that <code>1e-5</code> is a common rate.</li>
+<li>Takeaway: the gradient is a search for a local minimum. Step size through this search is the learning rate. This is done by backpropagating the affect of a function to a tensor’s gradient. In this sense, “all the points” in our array are somewhere on this line and we wish to find a tensor such that the sum of the gradients is closest to zero. Think I said that correctly.</li>
+</ul>
+<p>Application:</p>
+<p>Let’s apply the above to our MNIST imageset…</p>
+</section>
+</section>
+</section>
+<section id="questionnaire" class="level2">
+<h2 class="anchored" data-anchor-id="questionnaire">Questionnaire</h2>
+<ol type="1">
+<li><p>What letters are often used to signify the independent and dependent variables?</p>
+<p>x for the independent variable and y for the dependent variable, as in math, e.g.&nbsp;<code>y = f(x)</code>.</p></li>
+<li><p>What’s the difference between the crop, pad, and squish resize approaches? When might you choose one over the others?</p>
+<p>Crop trims image to size, pad adds zeros (black) to size, squish alters the aspect ratio to size. The choice depends on the data and the subject. It may be advantageous for the model to recognize half a bear, such as if trim is used.</p></li>
+<li><p>What is data augmentation? Why is it needed?</p>
+<p>Data augmentation provides a broader view of material to train on. It can be a way to diversify the training set the model is based on.</p></li>
+<li><p>What is the difference between item_tfms and batch_tfms?</p>
+<p><code>item_tfms</code> operates on each item in a batch while <code>batch_tfms</code> operates on each batch.</p></li>
+<li><p>What is a confusion matrix?</p>
+<p>A confusion matrix describes the predictions of the model, showing both where it is right vs.&nbsp;where it is wrong. It is shown as a table where x and y are your labels/categories and each cell is the number of images predicted vs.&nbsp;actually labeled.</p></li>
+<li><p>What does export save?</p>
+<p>Export saves the labels, weights, and biases of the model for use on another system, e.g.&nbsp;to deploy to production.</p></li>
+<li><p>What is it called when we use a model for getting predictions, instead of training?</p>
+<p>This is called inference.</p></li>
+<li><p>What are IPython widgets?</p>
+<p>Controls that couple python, javascript, and html into a functional GUI within a jupyter notebook.</p></li>
+<li><p>When might you want to use CPU for deployment? When might GPU be better?</p>
+<p>For inference (e.g.&nbsp;use in production), a CPU is likely sufficient, however for models deployed at scale, a GPU may be faster.</p></li>
+<li><p>What are the downsides of deploying your app to a server, instead of to a client (or edge) device such as a phone or PC?</p>
+<ol type="1">
+<li>It requires online access</li>
+<li>It is limited by the latency and bandwidth available of the underlying network</li>
+<li>It requires centralized resources (e.g.&nbsp;the server it runs on)</li>
+</ol></li>
+<li><p>What are three examples of problems that could occur when rolling out a bear warning system in practice?</p>
+<ol type="1">
+<li>It could be fooled by costumes or may not recognize partial bear images</li>
+<li>It might not know how to recognize all bears</li>
+<li>If online, requires internet connectivity, if offline, it requires updates</li>
+</ol></li>
+<li><p>What is “out-of-domain data”?</p>
+<p>Data shown to a model that is unlike anything it was trained on</p></li>
+<li><p>What is “domain shift”?</p>
+<p>Where the data our model is shown in production changes over time, diverging from what it was trained on. To resolve this, online training or simply retraining are used.</p></li>
+<li><p>What are the three steps in the deployment process? <em>This is question 27 in Chapter 2 of fastbook</em></p>
+<ol type="1">
+<li>Create (train) the model</li>
+<li>Export the model</li>
+<li>Deploy the model for inference</li>
+</ol></li>
+<li><p>How is a grayscale image represented on a computer? How about a color image?</p>
+<p>Grayscale images are represented as an array of 8-bit values. Color images (at least RGB colorspaced) are represented as a tuple/vector of three 8-bit values. For example, the shape of a greyscale image that is 28 pixels by 28 pixels would be (28, 28) and a color image (28, 28, 3).</p></li>
+<li><p>How are the files and folders in the MNIST_SAMPLE dataset structured? Why?</p>
+<p>The data set has been pre-separated into a training set and a validation set. In each dataset, directories for each numeral contain images of that numeral.</p></li>
+<li><p>Explain how the “pixel similarity” approach to classifying digits works.</p>
+<p>The “pixel similarity” approach used an average of all images of a numeral to create a baseline to compare new numeral images against. This can be done, say, by subtracting the sample image from the average and then using the result to compute an error vector, such as by taking the L1 normal (abs() of the difference minus the mean()).</p></li>
+<li><p>What is a list comprehension? Create one now that selects odd numbers from a list and doubles them.</p>
+<p>List comprehension is a feature of the python language that returns a list from a some function. For example</p>
+<p><code>doubles = [ (x*2) for x in range(1, 100, 2) ]</code></p>
+<p>Returns a list containing the double of each odd number from 1 up to 100.</p></li>
+<li><p>What is a “rank-3 tensor”?</p>
+<p>A rank-3 tensor is a matrix. Recall that a rank-0 tensor is a scalar and a rank-1 tensor is a vector.</p></li>
+<li><p>What is the difference between tensor rank and shape? How do you get the rank from the shape?</p>
+<p>A tensor shape describes the length of a tensor in each of its dimensions. The rank describes the number of dimensions. The rank can be computed as:</p>
+<p><code>rank = len(t.shape)</code></p></li>
+<li><p>What are RMSE and L1 norm?</p>
+<p>L1 norm is the mean absolute distance: abs(A-B) - mean(A-B) L2 norm is the root mean square average: (A-B)**2.mean().sqrt()</p></li>
+<li><p>How can you apply a calculation on thousands of numbers at once, many thousands of times faster than a Python loop?</p>
+<p>Using matrix math in numpy or tensors in pytorch.</p></li>
+<li><p>Create a 3×3 tensor or array containing the numbers from 1 to 9. Double it. Select the bottom-right four numbers.</p>
+<div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1">(t.tensor(<span class="bu" style="color: null;">range</span>(<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">10</span>)).reshape(<span class="dv" style="color: #AD0000;">3</span>, <span class="dv" style="color: #AD0000;">3</span>)<span class="op" style="color: #5E5E5E;">*</span><span class="dv" style="color: #AD0000;">2</span>)[<span class="dv" style="color: #AD0000;">1</span>:<span class="dv" style="color: #AD0000;">3</span>,<span class="dv" style="color: #AD0000;">1</span>:<span class="dv" style="color: #AD0000;">3</span>]</span>
+<span id="cb3-2"></span>
+<span id="cb3-3">tensor([[<span class="dv" style="color: #AD0000;">10</span>,  <span class="dv" style="color: #AD0000;">12</span>],</span>
+<span id="cb3-4">         <span class="dv" style="color: #AD0000;">16</span>, <span class="dv" style="color: #AD0000;">18</span>]])</span></code></pre></div></li>
+<li><p>What is broadcasting?</p></li>
+<li><p>Are metrics generally calculated using the training set, or the validation set? Why?</p></li>
+<li><p>What is SGD?</p>
+<p>SGD is stochastic gradient descent.</p></li>
+<li><p>Why does SGD use mini-batches?</p>
+<p>We can more quickly compute new parameters with smaller steps. These smaller steps are mini-batches. They are less accurate than running the full batch, but faster. They are also more likely to be runnable on GPU accelerated systems, where memory is limited.</p></li>
+<li><p>What are the seven steps in SGD for machine learning?</p>
+<ol type="1">
+<li>init: Initialize our weights</li>
+<li>predict: For a given weight, predict the next value</li>
+<li>loss: Compute the loss from our prediction</li>
+<li>gradient: Compute the gradient for how much our loss would change for a small change to a weight</li>
+<li>step: Update our weight</li>
+<li>repeat: return to predict to continue the process</li>
+<li>stop: cease learning</li>
+</ol></li>
+<li><p>How do we initialize the weights in a model?</p></li>
+<li><p>What is “loss”?</p>
+<p>Loss is a computation of how good the model is doing by measuring predictions vs.&nbsp;actuals.</p></li>
+<li><p>Why can’t we always use a high learning rate?</p>
+<p>If the model learns too quickly it will pass or oscillate around the optimal weights. Also, if the learning rate is too high, we may overfit our model.</p></li>
+<li><p>What is a “gradient”?</p>
+<p>A gradient is a computation of how much our loss would change by making a small change to a weight.</p></li>
+</ol>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>education</category>
+  <category>fastai</category>
+  <guid>https://www.tbeck.io/blog/posts/2020/09/2020-09-16-lesson-3.html</guid>
+  <pubDate>Wed, 16 Sep 2020 07:00:00 GMT</pubDate>
+  <media:content url="https://www.tbeck.io/blog/posts/2020/09/images/sgd.png " medium="image"/>
+</item>
+<item>
+  <title>fastai v4: Lesson 2</title>
+  <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
+  <link>https://www.tbeck.io/blog/posts/2020/09/2020-09-06-lesson-2.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="lesson-2" class="level1">
+<h1>Lesson 2</h1>
+<p>Notes from fastai lesson 2.</p>
+<section id="links" class="level2">
+<h2 class="anchored" data-anchor-id="links">Links</h2>
+<ul>
+<li><a href="https://course.fast.ai/videos/?lesson=2">Lesson 2 Video</a></li>
+<li><a href="https://forums.fast.ai/">fastai Forum</a></li>
+<li><a href="https://modelzoo.co/">Model Zoo</a></li>
+<li><a href="https://github.com/onnx/models">ONNX Models</a></li>
+</ul>
+</section>
+<section id="notes" class="level2">
+<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<p>Transfer learning: using an existing architecture to create a model trained on a particular data set</p>
+<p>Error is one kind of metric, measuring “how well you’re doing” Loss is a measure of performance used to improve the parameters. “Are we learning (adjusting our parameters)?”</p>
+<p>Model training</p>
+<ul>
+<li>Built a model from Bing API search results (grizzly vs black vs teddy bears)</li>
+<li>Used <code>DataBlock()</code> to create a dataset</li>
+<li>Used dataloaders to load the data into memory</li>
+<li>Used the <code>resnet18</code> architecture to train a model using the dataset, similar to lesson 1</li>
+<li>Exported the model via pickle to productionize it - model contains the architecture + new parameters + vocabulary (labels)</li>
+<li>Used the model to perform inference on images the model has not seen before</li>
+<li>Used <code>ImageClassifierCleaner()</code> to clean the dataset</li>
+</ul>
+<p>Next lesson</p>
+<ul>
+<li>Deploying to binder, treating your model as if it’s in production by uploading new images to it in “production”</li>
+</ul>
+</section>
+<section id="jargon" class="level2">
+<h2 class="anchored" data-anchor-id="jargon">Jargon</h2>
+<table class="table">
+<colgroup>
+<col style="width: 55%">
+<col style="width: 44%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Jargon We Use (again)</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Label</td>
+<td style="text-align: left;">The data we’re trying to predict (recall the diagram)</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Architecture</td>
+<td style="text-align: left;">A template of the model we are trying to fit. It represents the mathematical function we pass inputs &amp; parameters to.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Model</td>
+<td style="text-align: left;">An architecture with a specific set of parameters. The parameters may be created through training over one or more epochs.</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Parameters</td>
+<td style="text-align: left;">The values of the model that we can alter trough training.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Fit or Train</td>
+<td style="text-align: left;">Updating the parameters such that the model is better able to predict our labels.</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Pretrained model</td>
+<td style="text-align: left;">A model with parameters adjusted via training, typically will be <code>fine_tune()</code>d, such as <code>resnet34</code>.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">fine tune</td>
+<td style="text-align: left;">Update a pretrained model for another task, such as making <code>resnet34</code> recognize cats or dogs.</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">epoch</td>
+<td style="text-align: left;">One complete pass through the input data</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">metric</td>
+<td style="text-align: left;">A measure of how good the model is to control training via SGD</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">validation set</td>
+<td style="text-align: left;">A subset of our data we do not train our model with to measure its performance</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">training set</td>
+<td style="text-align: left;">A subset of our data we train our model with that does not include any data from the validation set</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">overfitting</td>
+<td style="text-align: left;">Training a model that results in memorization rather than generalization</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">cnn</td>
+<td style="text-align: left;">A convolutional neural network, a type of NN suited for computer vision</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="flash-cards" class="level2">
+<h2 class="anchored" data-anchor-id="flash-cards">Flash Cards:</h2>
+<ul>
+<li>Architecture vs.&nbsp;Model?
+<ul>
+<li>A model includes an architecture with a specific set of parameters. These parameters allow the architecture to do something it wasn’t originally designed to do.</li>
+</ul></li>
+</ul>
+</section>
+<section id="where-is-deep-learning-good" class="level2">
+<h2 class="anchored" data-anchor-id="where-is-deep-learning-good">Where is Deep Learning good?</h2>
+<ol type="1">
+<li>Computer Vision - detection &amp; classification</li>
+<li>Text - Classifiction &amp; conversation (but not really)</li>
+<li>Tabular - Effective on high cardinality datasets, e.g.&nbsp;part numbers and serial numbers</li>
+<li>Recommendation Systems (Recsys, aka Collaborative Filtering), but note predictions &lt;&gt; recommendations - because you like to read science fiction, a model might predict you’ll like Aasimov - but that might not be what you want from a recommendation engine e.g.&nbsp;if you’re branching out to Romance.</li>
+<li>Multi-modal - Combining the above, capition images, humans in the loop</li>
+<li>Various other - NLP, protein</li>
+</ol>
+</section>
+<section id="products-in-the-wild" class="level2">
+<h2 class="anchored" data-anchor-id="products-in-the-wild">Products in the wild</h2>
+<ol type="1">
+<li><a href="https://www.kickstarter.com/projects/2092430307/arsenal-2/description">Arsenal 2</a>, combining a camera with an AI platform</li>
+<li><a href="https://www.kickstarter.com/projects/birdsy/birdsy-ai-records-and-ids-birds-and-wildlife-for-you">Birdsy</a>, using computer vision to classify birds in real time</li>
+</ol>
+</section>
+<section id="get-writing" class="level2">
+<h2 class="anchored" data-anchor-id="get-writing">Get Writing</h2>
+<p>This blog :)</p>
+</section>
+<section id="questionaire" class="level2">
+<h2 class="anchored" data-anchor-id="questionaire">Questionaire</h2>
+<p>Questions 1-12 are annswered in my lesson 1 notes.</p>
+<ol start="13" type="1">
+<li><p>What is a p value?</p>
+<p>A p-value is the probability of an observed result assuming that the null hypothesis is true. They are terrible and shouldn’t be relied on, per the American Statistical Association. It does not provide a good measure of evidence for scientific conclusions to be made.</p>
+<p>See <a href="https://en.wikipedia.org/wiki/P-value">p-value</a></p></li>
+<li><p>What is a prior?</p>
+<p>Not clear what this question is asking and it’s not listed in the book.</p></li>
+<li><p>Provide an example of where the bear classification model might work poorly in production, due to structural or style differences in the training data.</p>
+<p>The model is not well trained on pictures of bears from various angels. The model might struggle with images of bears from above, or from behind, or partial images.</p></li>
+<li><p>Where do text models currently have a major deficiency?</p>
+<ul>
+<li><strong><em>This is question 1 of Ch 2. in the book.</em></strong></li>
+</ul></li>
+<li><p>What are possible negative societal implications of text generation models? In situations where a model might make mistakes, and those mistakes could be harmful, what is a good alternative to automating a process?</p></li>
+<li><p>What kind of tabular data is deep learning particularly good at?</p></li>
+<li><p>What’s a key downside of directly using a deep learning model for recommendation systems?</p>
+<p>It doesn’t know how to recommend things outside of its domain that you might still be interested in.</p></li>
+<li><p>What are the steps of the Drivetrain Approach?</p></li>
+<li><p>How do the steps of the Drivetrain Approach map to a recommendation system?</p></li>
+<li><p>Create an image recognition model using data you curate, and deploy it on the web.</p></li>
+<li><p>What is DataLoaders?</p>
+<p>A class that helps prepare a dataset.</p></li>
+<li><p>What four things do we need to tell fastai to create DataLoaders?</p>
+<ol type="1">
+<li>How to find the data (<code>get_items</code>)</li>
+<li>How to get the dependent and independent variable(s) (<code>get_x</code>, <code>get_y</code>)</li>
+<li>Create the data blocks (e.g.&nbsp;images and labels)</li>
+<li>How to transform the items, such as <code>Resize(128)</code>.</li>
+</ol></li>
+<li><p>What does the splitter parameter to DataBlock do?</p>
+<p>It defines how your data is split up into a training set and a validation set.</p></li>
+<li><p>How do we ensure a random split always gives the same validation set?</p>
+<p>Use a seed value by speifying <code>seed=int</code> when calling <code>RandomSplitter()</code>.</p></li>
+</ol>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>education</category>
+  <category>fastai</category>
+  <guid>https://www.tbeck.io/blog/posts/2020/09/2020-09-06-lesson-2.html</guid>
+  <pubDate>Sun, 06 Sep 2020 07:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Fossil Dataset Construction</title>
+  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset.html</link>
+  <description><![CDATA[ 
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>I hacked together most of this code in between completing the first few lessons from the fastai course v3. The final product is a site I host internally so that my local paleontologist can label data for me. :)</p>
+<p>This was the first big step in one of my projects. The objective of this notebook was to learn about the reddit API and build a dataset I could use to train a model using the <code>resnet</code> architecture. It also helped me validate my home setup was complete.</p>
+<p>What it didn’t teach me is how to integrate with the broader community, which is another reason I wanted to create this blog.</p>
+<div class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;">import</span> os</span>
+<span id="cb1-2"><span class="im" style="color: #00769E;">import</span> sys</span>
+<span id="cb1-3"><span class="im" style="color: #00769E;">import</span> re</span>
+<span id="cb1-4"><span class="im" style="color: #00769E;">import</span> glob</span>
+<span id="cb1-5"><span class="im" style="color: #00769E;">from</span> pathlib <span class="im" style="color: #00769E;">import</span> Path</span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="im" style="color: #00769E;">import</span> numpy <span class="im" style="color: #00769E;">as</span> np</span>
+<span id="cb1-8"><span class="im" style="color: #00769E;">import</span> pandas <span class="im" style="color: #00769E;">as</span> pd</span>
+<span id="cb1-9"><span class="im" style="color: #00769E;">import</span> requests</span>
+<span id="cb1-10"></span>
+<span id="cb1-11"><span class="co" style="color: #5E5E5E;"># For generating the widgets</span></span>
+<span id="cb1-12"><span class="im" style="color: #00769E;">import</span> ipywidgets <span class="im" style="color: #00769E;">as</span> widgets</span>
+<span id="cb1-13"><span class="im" style="color: #00769E;">from</span> ipywidgets <span class="im" style="color: #00769E;">import</span> interact, interact_manual</span>
+<span id="cb1-14"><span class="im" style="color: #00769E;">from</span> IPython.display <span class="im" style="color: #00769E;">import</span> clear_output, display, Image <span class="im" style="color: #00769E;">as</span> Img</span>
+<span id="cb1-15"><span class="im" style="color: #00769E;">from</span> IPython.core.display <span class="im" style="color: #00769E;">import</span> HTML</span>
+<span id="cb1-16"><span class="im" style="color: #00769E;">import</span> ipyplot</span>
+<span id="cb1-17"></span>
+<span id="cb1-18"><span class="im" style="color: #00769E;">from</span> fastai.vision <span class="im" style="color: #00769E;">import</span> <span class="op" style="color: #5E5E5E;">*</span></span>
+<span id="cb1-19"><span class="im" style="color: #00769E;">from</span> fastai.vision <span class="im" style="color: #00769E;">import</span> core</span>
+<span id="cb1-20"></span>
+<span id="cb1-21"><span class="co" style="color: #5E5E5E;"># For interacting with reddit</span></span>
+<span id="cb1-22"><span class="im" style="color: #00769E;">import</span> praw</span>
+<span id="cb1-23"><span class="im" style="color: #00769E;">from</span> praw.models <span class="im" style="color: #00769E;">import</span> MoreComments</span>
+<span id="cb1-24"></span>
+<span id="cb1-25"><span class="co" style="color: #5E5E5E;"># For managing our reddit secrets</span></span>
+<span id="cb1-26"><span class="im" style="color: #00769E;">from</span> dotenv <span class="im" style="color: #00769E;">import</span> load_dotenv</span>
+<span id="cb1-27">load_dotenv()</span></code></pre></div>
+</div>
+<section id="data-organization" class="level2">
+<h2 class="anchored" data-anchor-id="data-organization">Data Organization</h2>
+<p>To get started, we will follow the example in the first lessons by using a dataset that is labeled by the directory name. We will store images in the path below, which we will also use for training with fastai.</p>
+<p>In this case, images are saved to the path <code>/home/tbeck/src/data/fossils</code>. fastai saves the images using an 8-digit, zero filled identifier. This code does not check for duplicates and does not allow the user to review the existing dataset (e.g.&nbsp;to clean it), although there are some tools now with fastai that might be useful for that purpose.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1">dataset_path <span class="op" style="color: #5E5E5E;">=</span> Path(<span class="st" style="color: #20794D;">'/home/tbeck/src/data/fossils'</span>)</span>
+<span id="cb2-2">labels <span class="op" style="color: #5E5E5E;">=</span> [x.name <span class="cf" style="color: #003B4F;">for</span> x <span class="kw" style="color: #003B4F;">in</span> dataset_path.iterdir() <span class="cf" style="color: #003B4F;">if</span> (x.is_dir() <span class="kw" style="color: #003B4F;">and</span> x.name <span class="kw" style="color: #003B4F;">not</span> <span class="kw" style="color: #003B4F;">in</span> [<span class="st" style="color: #20794D;">'models'</span>])]</span></code></pre></div>
+</div>
+</section>
+<section id="praw" class="level2">
+<h2 class="anchored" data-anchor-id="praw">PRAW</h2>
+<p>We must instantiate the reddit PRAW client, so we do so by passing it environment variables loaded from a <code>.env</code> file via the <code>python-dotenv</code> package. Using the API, we can obtain URLs to posted images and scrape the reddit comments (useful for getting hints).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1">reddit <span class="op" style="color: #5E5E5E;">=</span> praw.Reddit(client_id<span class="op" style="color: #5E5E5E;">=</span>os.environ[<span class="st" style="color: #20794D;">'REDDIT_CLIENT_ID'</span>], client_secret<span class="op" style="color: #5E5E5E;">=</span>os.environ[<span class="st" style="color: #20794D;">'REDDIT_SECRET'</span>],</span>
+<span id="cb3-2">                     password<span class="op" style="color: #5E5E5E;">=</span>os.environ[<span class="st" style="color: #20794D;">'REDDIT_PASSWORD'</span>], user_agent<span class="op" style="color: #5E5E5E;">=</span>os.environ[<span class="st" style="color: #20794D;">'REDDIT_USER_AGENT'</span>],</span>
+<span id="cb3-3">                     username<span class="op" style="color: #5E5E5E;">=</span>os.environ[<span class="st" style="color: #20794D;">'REDDIT_USERNAME'</span>])</span>
+<span id="cb3-4"></span>
+<span id="cb3-5">fossilid <span class="op" style="color: #5E5E5E;">=</span> reddit.subreddit(<span class="st" style="color: #20794D;">'fossilid'</span>)</span></code></pre></div>
+</div>
+<p>We need some helper functions to retrieve the images and save them to our dataset. I found that URLs obtained from reddit need some post processing, otherwise they do not render properly.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="kw" style="color: #003B4F;">def</span> download_image(url, dest<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">None</span>):</span>
+<span id="cb4-2">    <span class="co" style="color: #5E5E5E;">"""Given a URL, saves the image in a format the fastai likes."""</span></span>
+<span id="cb4-3">    dest <span class="op" style="color: #5E5E5E;">=</span> Path(dest)</span>
+<span id="cb4-4">    dest.mkdir(exist_ok<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">True</span>)</span>
+<span id="cb4-5">    </span>
+<span id="cb4-6">    files <span class="op" style="color: #5E5E5E;">=</span> glob.glob(os.path.join(dest, <span class="st" style="color: #20794D;">'*.jpg'</span>)) <span class="op" style="color: #5E5E5E;">+</span> glob.glob(os.path.join(dest, <span class="st" style="color: #20794D;">'*.png'</span>))</span>
+<span id="cb4-7">    i <span class="op" style="color: #5E5E5E;">=</span> <span class="bu" style="color: null;">len</span>(files)</span>
+<span id="cb4-8"></span>
+<span id="cb4-9">    suffix <span class="op" style="color: #5E5E5E;">=</span> re.findall(<span class="vs" style="color: #20794D;">r'\.\w+?(?=(?:\?|$))'</span>, url)</span>
+<span id="cb4-10">    suffix <span class="op" style="color: #5E5E5E;">=</span> suffix[<span class="dv" style="color: #AD0000;">0</span>] <span class="cf" style="color: #003B4F;">if</span> <span class="bu" style="color: null;">len</span>(suffix)<span class="op" style="color: #5E5E5E;">&gt;</span><span class="dv" style="color: #AD0000;">0</span>  <span class="cf" style="color: #003B4F;">else</span> <span class="st" style="color: #20794D;">'.jpg'</span></span>
+<span id="cb4-11">    </span>
+<span id="cb4-12">    <span class="cf" style="color: #003B4F;">try</span>: core.download_url(url, dest<span class="op" style="color: #5E5E5E;">/</span><span class="ss" style="color: #20794D;">f"</span><span class="sc" style="color: #5E5E5E;">{</span>i<span class="sc" style="color: #5E5E5E;">:08d}{</span>suffix<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>, overwrite<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">True</span>, show_progress<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>)</span>
+<span id="cb4-13">    <span class="cf" style="color: #003B4F;">except</span> <span class="pp" style="color: #AD0000;">Exception</span> <span class="im" style="color: #00769E;">as</span> e: <span class="ss" style="color: #20794D;">f"Couldn't download </span><span class="sc" style="color: #5E5E5E;">{</span>url<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">."</span>   </span>
+<span id="cb4-14"></span>
+<span id="cb4-15"><span class="kw" style="color: #003B4F;">def</span> get_image(url, verbose<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>):</span>
+<span id="cb4-16">    <span class="co" style="color: #5E5E5E;">"""Given a URL, returns the URL if it looks like it's a URL to an image"""</span></span>
+<span id="cb4-17">    IMG_TEST <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">"\.(jpg|png)"</span></span>
+<span id="cb4-18">    p <span class="op" style="color: #5E5E5E;">=</span> re.<span class="bu" style="color: null;">compile</span>(IMG_TEST, re.IGNORECASE)</span>
+<span id="cb4-19">    <span class="cf" style="color: #003B4F;">if</span> p.search(url):</span>
+<span id="cb4-20">        <span class="cf" style="color: #003B4F;">if</span> verbose:</span>
+<span id="cb4-21">            <span class="bu" style="color: null;">print</span>(<span class="st" style="color: #20794D;">"url to image"</span>)</span>
+<span id="cb4-22">        <span class="cf" style="color: #003B4F;">return</span> url</span>
+<span id="cb4-23">    </span>
+<span id="cb4-24">    IMGUR_LINK_TEST <span class="op" style="color: #5E5E5E;">=</span> <span class="vs" style="color: #20794D;">r"((http|https)://imgur.com/[a-z0-9]+)$"</span></span>
+<span id="cb4-25">    p <span class="op" style="color: #5E5E5E;">=</span> re.<span class="bu" style="color: null;">compile</span>(IMGUR_LINK_TEST, re.IGNORECASE)</span>
+<span id="cb4-26">    </span>
+<span id="cb4-27">    <span class="cf" style="color: #003B4F;">if</span> p.search(url):</span>
+<span id="cb4-28">        <span class="cf" style="color: #003B4F;">if</span> verbose:</span>
+<span id="cb4-29">            <span class="bu" style="color: null;">print</span>(<span class="st" style="color: #20794D;">"imgur without extension"</span>)</span>
+<span id="cb4-30">        <span class="cf" style="color: #003B4F;">return</span> url <span class="op" style="color: #5E5E5E;">+</span> <span class="st" style="color: #20794D;">'.jpg'</span></span>
+<span id="cb4-31"></span>
+<span id="cb4-32">    IMGUR_REGEX_TEST <span class="op" style="color: #5E5E5E;">=</span> <span class="vs" style="color: #20794D;">r"((http|https)://i.imgur.com/[a-z0-9\.]+?(jpg|png))"</span></span>
+<span id="cb4-33">    p <span class="op" style="color: #5E5E5E;">=</span> re.<span class="bu" style="color: null;">compile</span>(IMGUR_REGEX_TEST, re.IGNORECASE)</span>
+<span id="cb4-34">    </span>
+<span id="cb4-35">    <span class="cf" style="color: #003B4F;">if</span> p.search(url):</span>
+<span id="cb4-36">        <span class="cf" style="color: #003B4F;">if</span> verbose:</span>
+<span id="cb4-37">            <span class="bu" style="color: null;">print</span>(<span class="st" style="color: #20794D;">"imgur with extension"</span>)</span>
+<span id="cb4-38">        <span class="cf" style="color: #003B4F;">return</span> url</span>
+<span id="cb4-39">    </span>
+<span id="cb4-40">    <span class="cf" style="color: #003B4F;">return</span> <span class="va" style="color: #111111;">None</span></span>
+<span id="cb4-41"></span>
+<span id="cb4-42"><span class="kw" style="color: #003B4F;">class</span> Error(<span class="pp" style="color: #AD0000;">Exception</span>):</span>
+<span id="cb4-43">    <span class="kw" style="color: #003B4F;">def</span> <span class="fu" style="color: #4758AB;">__init__</span>(<span class="va" style="color: #111111;">self</span>, msg):</span>
+<span id="cb4-44">        <span class="va" style="color: #111111;">self</span>.msg <span class="op" style="color: #5E5E5E;">=</span> msg</span>
+<span id="cb4-45">        </span>
+<span id="cb4-46"><span class="kw" style="color: #003B4F;">class</span> SubmissionStickiedError(Error):</span>
+<span id="cb4-47">    <span class="cf" style="color: #003B4F;">pass</span></span>
+<span id="cb4-48"><span class="kw" style="color: #003B4F;">class</span> SubmissionIsVideoError(Error):</span>
+<span id="cb4-49">    <span class="cf" style="color: #003B4F;">pass</span></span>
+<span id="cb4-50"><span class="kw" style="color: #003B4F;">class</span> SubmissionNotAnImageError(Error):</span>
+<span id="cb4-51">    <span class="cf" style="color: #003B4F;">pass</span></span>
+<span id="cb4-52"><span class="kw" style="color: #003B4F;">class</span> DisplayError(Error):</span>
+<span id="cb4-53">    <span class="cf" style="color: #003B4F;">pass</span></span></code></pre></div>
+</div>
+<p>Now we can query reddit for the images. The method below to build the dataset is a little clunky (I create arrays for each column of data and take great steps to be sure they are equal length). A better way would be to delegate creating this data structure to a single function so that the code below is less complex.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="co" style="color: #5E5E5E;"># Fetch submissions for analysis and initialize parallel arrays</span></span>
+<span id="cb5-2">submissions <span class="op" style="color: #5E5E5E;">=</span> []</span>
+<span id="cb5-3">images <span class="op" style="color: #5E5E5E;">=</span> []</span>
+<span id="cb5-4">top_comments <span class="op" style="color: #5E5E5E;">=</span> []</span>
+<span id="cb5-5">errors <span class="op" style="color: #5E5E5E;">=</span> []</span>
+<span id="cb5-6">verbose <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">False</span></span>
+<span id="cb5-7"></span>
+<span id="cb5-8"><span class="cf" style="color: #003B4F;">for</span> i, submission <span class="kw" style="color: #003B4F;">in</span> <span class="bu" style="color: null;">enumerate</span>(reddit.subreddit(<span class="st" style="color: #20794D;">"fossilid"</span>).new(limit<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">None</span>)):</span>
+<span id="cb5-9">    submissions.append(submission)</span>
+<span id="cb5-10">    images.append(<span class="va" style="color: #111111;">None</span>)</span>
+<span id="cb5-11">    top_comments.append(<span class="va" style="color: #111111;">None</span>)</span>
+<span id="cb5-12">    errors.append(<span class="va" style="color: #111111;">None</span>)</span>
+<span id="cb5-13">    </span>
+<span id="cb5-14">    <span class="cf" style="color: #003B4F;">try</span>:</span>
+<span id="cb5-15">        <span class="cf" style="color: #003B4F;">if</span> submission.stickied:</span>
+<span id="cb5-16">            <span class="cf" style="color: #003B4F;">raise</span> SubmissionStickiedError(<span class="st" style="color: #20794D;">"Post is stickied"</span>)</span>
+<span id="cb5-17">            </span>
+<span id="cb5-18">        <span class="cf" style="color: #003B4F;">if</span> submission.is_video:</span>
+<span id="cb5-19">            <span class="cf" style="color: #003B4F;">raise</span> SubmissionIsVideoError(<span class="st" style="color: #20794D;">"Post is a video"</span>)</span>
+<span id="cb5-20"></span>
+<span id="cb5-21">        <span class="cf" style="color: #003B4F;">if</span> get_image(submission.url):</span>
+<span id="cb5-22">            <span class="cf" style="color: #003B4F;">if</span> verbose:</span>
+<span id="cb5-23">                <span class="bu" style="color: null;">print</span>(<span class="ss" style="color: #20794D;">f"Title: </span><span class="sc" style="color: #5E5E5E;">{</span>submission<span class="sc" style="color: #5E5E5E;">.</span>title<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>)</span>
+<span id="cb5-24">            </span>
+<span id="cb5-25">            images[i] <span class="op" style="color: #5E5E5E;">=</span> get_image(submission.url)</span>
+<span id="cb5-26"></span>
+<span id="cb5-27">            <span class="cf" style="color: #003B4F;">try</span>:</span>
+<span id="cb5-28">                <span class="cf" style="color: #003B4F;">if</span> verbose:</span>
+<span id="cb5-29">                    display(Img(get_image(submission.url), retina<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>, height<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">400</span>, width<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">400</span>))</span>
+<span id="cb5-30">            <span class="cf" style="color: #003B4F;">except</span> <span class="pp" style="color: #AD0000;">Exception</span> <span class="im" style="color: #00769E;">as</span> err:</span>
+<span id="cb5-31">                <span class="cf" style="color: #003B4F;">if</span> verbose:</span>
+<span id="cb5-32">                    <span class="bu" style="color: null;">print</span>(<span class="ss" style="color: #20794D;">f"Failed to retrieve transformed image url </span><span class="sc" style="color: #5E5E5E;">{</span>get_image(submission.url)<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;"> from submission url </span><span class="sc" style="color: #5E5E5E;">{</span>submission<span class="sc" style="color: #5E5E5E;">.</span>url<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>)</span>
+<span id="cb5-33">                <span class="cf" style="color: #003B4F;">raise</span> DisplayError(<span class="ss" style="color: #20794D;">f"Failed to retrieve transformed image url </span><span class="sc" style="color: #5E5E5E;">{</span>get_image(submission.url)<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;"> from submission url </span><span class="sc" style="color: #5E5E5E;">{</span>submission<span class="sc" style="color: #5E5E5E;">.</span>url<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>)</span>
+<span id="cb5-34"></span>
+<span id="cb5-35">            submission.comments.replace_more(limit<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">None</span>)</span>
+<span id="cb5-36">            <span class="cf" style="color: #003B4F;">for</span> top_level_comment <span class="kw" style="color: #003B4F;">in</span> submission.comments:</span>
+<span id="cb5-37">                <span class="cf" style="color: #003B4F;">if</span> verbose:</span>
+<span id="cb5-38">                    <span class="bu" style="color: null;">print</span>(<span class="ss" style="color: #20794D;">f"Comment: </span><span class="ch" style="color: #20794D;">\t</span><span class="sc" style="color: #5E5E5E;">{</span>top_level_comment<span class="sc" style="color: #5E5E5E;">.</span>body<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>)</span>
+<span id="cb5-39">                top_comments[i] <span class="op" style="color: #5E5E5E;">=</span> top_level_comment.body</span>
+<span id="cb5-40">                <span class="cf" style="color: #003B4F;">break</span></span>
+<span id="cb5-41">        <span class="cf" style="color: #003B4F;">else</span>:</span>
+<span id="cb5-42">            <span class="cf" style="color: #003B4F;">raise</span> SubmissionNotAnImageError(<span class="st" style="color: #20794D;">"Post is not a recognized image url"</span>)</span>
+<span id="cb5-43">    <span class="cf" style="color: #003B4F;">except</span> <span class="pp" style="color: #AD0000;">Exception</span> <span class="im" style="color: #00769E;">as</span> err:</span>
+<span id="cb5-44">        submissions[i] <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">None</span></span>
+<span id="cb5-45">        images[i] <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">None</span></span>
+<span id="cb5-46">        top_comments[i] <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">None</span></span>
+<span id="cb5-47">        errors[i] <span class="op" style="color: #5E5E5E;">=</span> err.msg</span>
+<span id="cb5-48"></span>
+<span id="cb5-49">df <span class="op" style="color: #5E5E5E;">=</span> pd.DataFrame({<span class="st" style="color: #20794D;">'submissions'</span>: submissions, <span class="st" style="color: #20794D;">'images'</span>: images, <span class="st" style="color: #20794D;">'comments'</span>: top_comments, <span class="st" style="color: #20794D;">'errors'</span>: errors})</span>
+<span id="cb5-50">df.dropna(how<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'all'</span>, inplace<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">True</span>)</span>
+<span id="cb5-51">df.dropna(subset<span class="op" style="color: #5E5E5E;">=</span>[<span class="st" style="color: #20794D;">'images'</span>], inplace<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">True</span>)</span></code></pre></div>
+</div>
+</section>
+</section>
+<section id="widget-requirements" class="level1">
+<h1>Widget Requirements</h1>
+<ol type="1">
+<li>Be able quickly jump around in the dataset</li>
+<li>Render the image</li>
+<li>Render a hint from the top reddit comment</li>
+<li>Save the image to disk</li>
+<li>Skip this image and show the next one</li>
+<li>Reset the form</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1">debug <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">False</span></span>
+<span id="cb6-2">output2 <span class="op" style="color: #5E5E5E;">=</span> widgets.Output()</span>
+<span id="cb6-3"></span>
+<span id="cb6-4">reset_button <span class="op" style="color: #5E5E5E;">=</span> widgets.Button(description<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Reset'</span>)</span>
+<span id="cb6-5"></span>
+<span id="cb6-6"><span class="kw" style="color: #003B4F;">def</span> on_reset_button_click(_):</span>
+<span id="cb6-7">    <span class="cf" style="color: #003B4F;">with</span> output2:</span>
+<span id="cb6-8">        clear_output()</span>
+<span id="cb6-9">        int_range.value <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">0</span></span>
+<span id="cb6-10">        classes_dropdown.value <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">None</span></span>
+<span id="cb6-11">        new_class.value <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">''</span></span>
+<span id="cb6-12"></span>
+<span id="cb6-13">reset_button.on_click(on_reset_button_click)</span>
+<span id="cb6-14"></span>
+<span id="cb6-15">save_button <span class="op" style="color: #5E5E5E;">=</span> widgets.Button(</span>
+<span id="cb6-16">    description<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Save'</span>,</span>
+<span id="cb6-17">    disabled<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>,</span>
+<span id="cb6-18">    button_style<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">''</span>, <span class="co" style="color: #5E5E5E;"># 'success', 'info', 'warning', 'danger' or ''</span></span>
+<span id="cb6-19">    tooltip<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Save'</span>,</span>
+<span id="cb6-20">    icon<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'check'</span></span>
+<span id="cb6-21">)</span>
+<span id="cb6-22"></span>
+<span id="cb6-23">skip_button <span class="op" style="color: #5E5E5E;">=</span> widgets.Button(</span>
+<span id="cb6-24">    description<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Skip'</span>,</span>
+<span id="cb6-25">    disabled<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>,</span>
+<span id="cb6-26">    button_style<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">''</span>, <span class="co" style="color: #5E5E5E;"># 'success', 'info', 'warning', 'danger' or ''</span></span>
+<span id="cb6-27">    tooltip<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Skip'</span>,</span>
+<span id="cb6-28">    icon<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">''</span></span>
+<span id="cb6-29">)</span>
+<span id="cb6-30"></span>
+<span id="cb6-31">int_range <span class="op" style="color: #5E5E5E;">=</span> widgets.IntSlider(</span>
+<span id="cb6-32">    value<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">0</span>,</span>
+<span id="cb6-33">    <span class="bu" style="color: null;">min</span><span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">0</span>,</span>
+<span id="cb6-34">    <span class="bu" style="color: null;">max</span><span class="op" style="color: #5E5E5E;">=</span><span class="bu" style="color: null;">len</span>(df) <span class="op" style="color: #5E5E5E;">-</span> <span class="dv" style="color: #AD0000;">1</span>,</span>
+<span id="cb6-35">    step<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">1</span>,</span>
+<span id="cb6-36">    description<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Submission:'</span>,</span>
+<span id="cb6-37">    disabled<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>,</span>
+<span id="cb6-38">    continuous_update<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>,</span>
+<span id="cb6-39">    orientation<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'horizontal'</span>,</span>
+<span id="cb6-40">    readout<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">True</span>,</span>
+<span id="cb6-41">    readout_format<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'d'</span></span>
+<span id="cb6-42">)</span>
+<span id="cb6-43"></span>
+<span id="cb6-44">img <span class="op" style="color: #5E5E5E;">=</span> widgets.Image(</span>
+<span id="cb6-45">    value<span class="op" style="color: #5E5E5E;">=</span>requests.get(df.iloc[int_range.value][<span class="st" style="color: #20794D;">'images'</span>]).content,</span>
+<span id="cb6-46">    <span class="bu" style="color: null;">format</span><span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'png'</span>,</span>
+<span id="cb6-47">    width<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">480</span>,</span>
+<span id="cb6-48">    height<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">640</span>,</span>
+<span id="cb6-49">)</span>
+<span id="cb6-50"></span>
+<span id="cb6-51">reddit_link <span class="op" style="color: #5E5E5E;">=</span> widgets.Label(<span class="st" style="color: #20794D;">'Link: '</span> <span class="op" style="color: #5E5E5E;">+</span> <span class="bu" style="color: null;">str</span>(df.iloc[int_range.value][<span class="st" style="color: #20794D;">'submissions'</span>].url))</span>
+<span id="cb6-52">comment <span class="op" style="color: #5E5E5E;">=</span> widgets.Label(<span class="st" style="color: #20794D;">'Hint: '</span> <span class="op" style="color: #5E5E5E;">+</span> <span class="bu" style="color: null;">str</span>(df.iloc[int_range.value][<span class="st" style="color: #20794D;">'comments'</span>]))</span>
+<span id="cb6-53"></span>
+<span id="cb6-54">local_options <span class="op" style="color: #5E5E5E;">=</span> [x.name <span class="cf" style="color: #003B4F;">for</span> x <span class="kw" style="color: #003B4F;">in</span> dataset_path.iterdir() <span class="cf" style="color: #003B4F;">if</span> (x.is_dir() <span class="kw" style="color: #003B4F;">and</span> x.name <span class="kw" style="color: #003B4F;">not</span> <span class="kw" style="color: #003B4F;">in</span> [<span class="st" style="color: #20794D;">'models'</span>])]</span>
+<span id="cb6-55">local_options.sort()</span>
+<span id="cb6-56"></span>
+<span id="cb6-57">classes_dropdown <span class="op" style="color: #5E5E5E;">=</span> widgets.Dropdown(</span>
+<span id="cb6-58">    options<span class="op" style="color: #5E5E5E;">=</span>[<span class="va" style="color: #111111;">None</span>] <span class="op" style="color: #5E5E5E;">+</span> local_options,</span>
+<span id="cb6-59">    value<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">None</span>,</span>
+<span id="cb6-60">    description<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Class:'</span>,</span>
+<span id="cb6-61">    disabled<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>,</span>
+<span id="cb6-62">)</span>
+<span id="cb6-63"></span>
+<span id="cb6-64"><span class="co" style="color: #5E5E5E;"># Free form text widget</span></span>
+<span id="cb6-65">new_class <span class="op" style="color: #5E5E5E;">=</span> widgets.Text(</span>
+<span id="cb6-66">    value<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">None</span>,</span>
+<span id="cb6-67">    placeholder<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">''</span>,</span>
+<span id="cb6-68">    description<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'New Class:'</span>,</span>
+<span id="cb6-69">    disabled<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span></span>
+<span id="cb6-70">)</span>
+<span id="cb6-71"></span>
+<span id="cb6-72"><span class="kw" style="color: #003B4F;">def</span> on_save_button_click(_):</span>
+<span id="cb6-73">    err<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">None</span></span>
+<span id="cb6-74">    <span class="cf" style="color: #003B4F;">if</span> <span class="bu" style="color: null;">len</span>(new_class.value) <span class="op" style="color: #5E5E5E;">&gt;</span> <span class="dv" style="color: #AD0000;">0</span>:</span>
+<span id="cb6-75">        label <span class="op" style="color: #5E5E5E;">=</span> new_class.value</span>
+<span id="cb6-76">    <span class="cf" style="color: #003B4F;">elif</span> classes_dropdown.value:</span>
+<span id="cb6-77">        label <span class="op" style="color: #5E5E5E;">=</span> classes_dropdown.value</span>
+<span id="cb6-78">    <span class="cf" style="color: #003B4F;">else</span>:</span>
+<span id="cb6-79">        err <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">"You must specify a label to save to."</span></span>
+<span id="cb6-80">    </span>
+<span id="cb6-81">    <span class="cf" style="color: #003B4F;">with</span> output2:</span>
+<span id="cb6-82">        clear_output()</span>
+<span id="cb6-83">        <span class="cf" style="color: #003B4F;">if</span> err:</span>
+<span id="cb6-84">            <span class="bu" style="color: null;">print</span>(err)</span>
+<span id="cb6-85">        <span class="cf" style="color: #003B4F;">else</span>:</span>
+<span id="cb6-86">            <span class="cf" style="color: #003B4F;">if</span> debug:</span>
+<span id="cb6-87">                <span class="bu" style="color: null;">print</span>(<span class="ss" style="color: #20794D;">f"Would fetch index </span><span class="sc" style="color: #5E5E5E;">{</span>int_range<span class="sc" style="color: #5E5E5E;">.</span>value<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;"> from </span><span class="sc" style="color: #5E5E5E;">{</span>df<span class="sc" style="color: #5E5E5E;">.</span>iloc[int_range.value][<span class="st" style="color: #20794D;">'images'</span>]<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;"> to </span><span class="sc" style="color: #5E5E5E;">{</span>dataset_path<span class="op" style="color: #5E5E5E;">/</span>label<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>)</span>
+<span id="cb6-88">            <span class="cf" style="color: #003B4F;">else</span>:</span>
+<span id="cb6-89">                Path(Path(dataset_path)<span class="op" style="color: #5E5E5E;">/</span>Path(label)).mkdir(exist_ok<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">True</span>)</span>
+<span id="cb6-90">                core.download_url(<span class="ss" style="color: #20794D;">f"</span><span class="sc" style="color: #5E5E5E;">{</span>df<span class="sc" style="color: #5E5E5E;">.</span>iloc[int_range.value][<span class="st" style="color: #20794D;">'images'</span>]<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>, <span class="ss" style="color: #20794D;">f"</span><span class="sc" style="color: #5E5E5E;">{</span>dataset_path<span class="op" style="color: #5E5E5E;">/</span>label<span class="sc" style="color: #5E5E5E;">}</span><span class="ss" style="color: #20794D;">"</span>, show_progress<span class="op" style="color: #5E5E5E;">=</span><span class="va" style="color: #111111;">False</span>, timeout<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">10</span>)</span>
+<span id="cb6-91">                local_options <span class="op" style="color: #5E5E5E;">=</span> [x.name <span class="cf" style="color: #003B4F;">for</span> x <span class="kw" style="color: #003B4F;">in</span> dataset_path.iterdir() <span class="cf" style="color: #003B4F;">if</span> (x.is_dir() <span class="kw" style="color: #003B4F;">and</span> x.name <span class="kw" style="color: #003B4F;">not</span> <span class="kw" style="color: #003B4F;">in</span> [<span class="st" style="color: #20794D;">'models'</span>])]</span>
+<span id="cb6-92">                local_options.sort()</span>
+<span id="cb6-93">                classes_dropdown.options <span class="op" style="color: #5E5E5E;">=</span> [<span class="va" style="color: #111111;">None</span>] <span class="op" style="color: #5E5E5E;">+</span> local_options</span>
+<span id="cb6-94">                </span>
+<span id="cb6-95">            int_range.value <span class="op" style="color: #5E5E5E;">=</span> int_range.value <span class="op" style="color: #5E5E5E;">+</span> <span class="dv" style="color: #AD0000;">1</span></span>
+<span id="cb6-96">            classes_dropdown.value <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">None</span></span>
+<span id="cb6-97">            new_class.value <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">''</span></span>
+<span id="cb6-98"></span>
+<span id="cb6-99"><span class="kw" style="color: #003B4F;">def</span> on_skip_button_click(_):</span>
+<span id="cb6-100">    <span class="cf" style="color: #003B4F;">with</span> output2:</span>
+<span id="cb6-101">        clear_output()</span>
+<span id="cb6-102">        int_range.value <span class="op" style="color: #5E5E5E;">=</span> int_range.value <span class="op" style="color: #5E5E5E;">+</span> <span class="dv" style="color: #AD0000;">1</span></span>
+<span id="cb6-103">        classes_dropdown.value <span class="op" style="color: #5E5E5E;">=</span> <span class="va" style="color: #111111;">None</span></span>
+<span id="cb6-104">        new_class.value <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">''</span></span>
+<span id="cb6-105"></span>
+<span id="cb6-106">save_button.on_click(on_save_button_click)</span>
+<span id="cb6-107">skip_button.on_click(on_skip_button_click)</span>
+<span id="cb6-108"></span>
+<span id="cb6-109"><span class="kw" style="color: #003B4F;">def</span> on_value_change(change):</span>
+<span id="cb6-110">    img.value <span class="op" style="color: #5E5E5E;">=</span> requests.get(df.iloc[change[<span class="st" style="color: #20794D;">'new'</span>]][<span class="st" style="color: #20794D;">'images'</span>]).content</span>
+<span id="cb6-111">    reddit_link.value <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">'Link: '</span> <span class="op" style="color: #5E5E5E;">+</span> <span class="bu" style="color: null;">str</span>(df.iloc[int_range.value][<span class="st" style="color: #20794D;">'submissions'</span>].url)</span>
+<span id="cb6-112">    comment.value<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Hint: '</span> <span class="op" style="color: #5E5E5E;">+</span> <span class="bu" style="color: null;">str</span>(df.iloc[change[<span class="st" style="color: #20794D;">'new'</span>]][<span class="st" style="color: #20794D;">'comments'</span>])</span>
+<span id="cb6-113">    <span class="co" style="color: #5E5E5E;">#with output2:</span></span>
+<span id="cb6-114">    <span class="co" style="color: #5E5E5E;">#    print(change['new'])</span></span>
+<span id="cb6-115"></span>
+<span id="cb6-116">int_range.observe(on_value_change, names<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'value'</span>)</span>
+<span id="cb6-117"></span>
+<span id="cb6-118">buttons <span class="op" style="color: #5E5E5E;">=</span> widgets.HBox([save_button, skip_button, reset_button])</span>
+<span id="cb6-119">entry <span class="op" style="color: #5E5E5E;">=</span> widgets.HBox([classes_dropdown, new_class])</span>
+<span id="cb6-120">things <span class="op" style="color: #5E5E5E;">=</span> widgets.VBox([int_range, img, reddit_link, comment, entry, buttons, output2])</span>
+<span id="cb6-121"></span>
+<span id="cb6-122">display(things)</span></code></pre></div>
+</div>
+</section>
+<section id="widgets" class="level1">
+<h1>Widgets</h1>
+<p>To build the dataset and gain context, I created a custom widget for my local paleontologist to use. Here, she can easily navigate the images and apply labels. This widget was a composite of multiple ipywidgets to appear as a single form:</p>
+<ul>
+<li>A slider so they can quickly jump between submissions</li>
+<li>Drop down and text fields that can be populated with fixed or freeform data</li>
+<li>Buttons for saving data, advancing, and resetting the form.</li>
+</ul>
+<p>In addition, I show the reddit comment using a label as a hint to the user.</p>
+<p>When the widget is rendered, it uses the DataFrame to retrieve the image from the url.</p>
+<p>The ‘Class’ dropdown is created from the labels loaded above. When ‘New Class’ is not empty and ‘Save’ is pressed, a new directory is created (if needed) and the image is saved there using fastai (see <code>download_image()</code>).</p>
+<p>Here is what the widget ends up looking like:</p>
+<div class="cell" data-execution_count="18">
+<div class="cell-output cell-output-display" data-execution_count="18">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset_files/figure-html/cell-8-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<section id="reviewing-the-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="reviewing-the-dataset">Reviewing The Dataset</h2>
+<p>Because the data is stored in a DataFrame, we can easily manipulate the information we’ve scraped. The <code>ipyplot</code> package is useful for generating thumbnails from a series of urls. This makes it easy to quickly review what’s been scraped.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1">ipyplot.plot_images(df[<span class="st" style="color: #20794D;">'images'</span>], max_images<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">80</span>, img_width<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">100</span>)</span></code></pre></div>
+</div>
+<div class="cell" data-scrolled="true" data-execution_count="16">
+<div class="cell-output cell-output-display" data-execution_count="16">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset_files/figure-html/cell-10-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="lessons-learned" class="level1">
+<h1>Lessons Learned</h1>
+<p>Functionality here is somewhat similar to what other widgets can do, such as <a href="https://github.com/janfreyberg/superintendent">superintendent</a>. But this was a good exercise to dust off my ipywidget skills, experiment with interacting with reddit’s API, and building a custom dataset using fastai.</p>
+<p>I built this notebook when fastai’s course v3 was still out, when Google images was being scraped rather than the Bing search API being used.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>projects</category>
+  <category>jupyter</category>
+  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-06-fossil-dataset.html</guid>
+  <pubDate>Sun, 06 Sep 2020 07:00:00 GMT</pubDate>
+  <media:content url="https://www.tbeck.io/blog/nbs/2020/09/images/fossil_matrix.png" medium="image" type="image/png" height="113" width="144"/>
+</item>
+<item>
+  <title>The story so far</title>
+  <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
+  <link>https://www.tbeck.io/blog/posts/2020/09/2020-09-05-the-story-so-far.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="the-story-so-far" class="level1">
+<h1>The Story so Far</h1>
+<p>Ok, so this all started around July 2020 when I decided to invest in my own education and learn more about what some of my team members were working on. One of them suggested <a href="https://fast.ai">fast.ai</a> so I decided to give it a try.</p>
+<p>At the time, the course v3 was in “production”. Since then, v4 has been released.</p>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<p>Being the hands on engineer that I am, I decided to build my own system for machine learning from spare parts around the house. I already have experience deploying jupyter for use by development teams and I am no stranger to Linux. The fast.ai Getting Started guide originally suggested using managed services such as Google Cloud or AWS, but it was straightforward enough to get something working that I’ve documented it below.</p>
+<p>Note that this isn’t recommended by Jeremy in the video lesson, but I decided to do it to understand what is going on behind the scenes (and why pay AWS when I have the hardware and free solar energy).</p>
+<section id="hardware" class="level3">
+<h3 class="anchored" data-anchor-id="hardware">Hardware</h3>
+<p>These are parts I had laying around the house. The key if you want GPU acceleration with <code>pytorch</code> is to have the right GPU; too old and your GPU won’t support <a href="https://developer.nvidia.com/cuda-gpus">the necessary GPU compute capabilities</a>. Below is the harware I had on hand:</p>
+<ul>
+<li>Intel i7-4770</li>
+<li>32 GB of RAM</li>
+<li>NVIDIA Corporation GM204 [GeForce GTX 970] (rev a1); GPU compute capability 5.2</li>
+<li>1 TB SSD (actually an upgrade; spinning rust was unbearably slow due to the low number of random IOPS)</li>
+</ul>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Linux is my preferred operating system in general for hacking, so I went with the recently released Ubuntu 20.04 LTS Server.</p>
+<p>I’ve been using <a href="https://www.anaconda.com/products/individual">anaconda</a> as my python distribution of choice for many years now, so I grabbed the python 3.8 x86_64 for Linux package.</p>
+<p>I also grabbed <a href="https://docs.docker.com/engine/install/ubuntu/">docker.io</a>. Nvidia has a solution for doing GPU compute that requires docker to be installed, as well.</p>
+<p>Since fastai uses pytorch, and pytorch only support CPU or GPU via cudatoolkit, I needed the <code>nvidia.ko</code> kernel module, the necessary nvidia cuda toolkit libraries, and the right packages in a conda environment.</p>
+<p>I installed <code>nvidia-dkms-450</code> to provide nvidia drivers for my GTX 970.</p>
+<p><a href="https://developer.nvidia.com/cuda-10.2-download-archive?target_os=Linux&amp;target_arch=x86_64&amp;target_distro=Ubuntu&amp;target_version=1804&amp;target_type=debnetwork">Nvidia provides a CUDA toolkit 10.2 Ubuntu repo</a>. Even though it says 18.04, it worked fine for me on 20.04. Just follow the instructions to install the <code>cuda</code> package.</p>
+<p>You might also find the <a href="https://docs.nvidia.com/cuda/archive/10.2/cuda-installation-guide-linux/index.html">NVIDIA CUDA Installation Guide for Linux</a> helpful for troubleshooting installation issues.</p>
+<p>Finally, to take advantage of the GPU you must install the GPU-accelerated version of <a href="https://pytorch.org/get-started/locally/">pytorch</a>. Only the conda instructions are needed since the system python isn’t used.</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><span class="ex" style="color: null;">$</span> conda install pytorch torchvision cudatoolkit=10.2 <span class="at" style="color: #657422;">-c</span> pytorch</span></code></pre></div>
+<p>Reboot as needed.</p>
+</section>
+<section id="integration-test" class="level3">
+<h3 class="anchored" data-anchor-id="integration-test">Integration &amp; Test</h3>
+<p>Finally we can create a new conda environment, install the necessary packages, and verify pytorch can see and use the GPU.</p>
+<ol type="1">
+<li><p>Create a fastai conda environment with python 3.8</p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><span class="ex" style="color: null;">$</span> conda create <span class="at" style="color: #657422;">-n</span> fastai python=3.8</span>
+<span id="cb2-2"><span class="ex" style="color: null;">$</span> conda activate fastai</span></code></pre></div></li>
+<li><p>Install fastai in conda, as per their <a href="https://docs.fast.ai/">Install Instructions</a>. It might take a while for <code>conda</code> to determine which channel to get the packages from.</p>
+<div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><span class="ex" style="color: null;">$</span> conda install <span class="at" style="color: #657422;">-c</span> fastai <span class="at" style="color: #657422;">-c</span> pytorch <span class="at" style="color: #657422;">-c</span> anaconda fastai gh anaconda</span>
+<span id="cb3-2"><span class="ex" style="color: null;">$</span> conda install <span class="at" style="color: #657422;">-c</span> fastai <span class="at" style="color: #657422;">-c</span> pytorch <span class="at" style="color: #657422;">-c</span> anaconda fastai gh anaconda cudatoolkit=10.2</span>
+<span id="cb3-3"><span class="ex" style="color: null;">Collecting</span> package metadata <span class="er" style="color: #AD0000;">(</span><span class="ex" style="color: null;">current_repodata.json</span><span class="kw" style="color: #003B4F;">)</span><span class="bu" style="color: null;">:</span> done</span>
+<span id="cb3-4"><span class="ex" style="color: null;">Solving</span> environment: done</span>
+<span id="cb3-5"></span>
+<span id="cb3-6"><span class="co" style="color: #5E5E5E;">## Package Plan ##</span></span>
+<span id="cb3-7"></span>
+<span id="cb3-8">  <span class="ex" style="color: null;">environment</span> location: /home/tbeck/anaconda3</span>
+<span id="cb3-9"></span>
+<span id="cb3-10">  <span class="ex" style="color: null;">added</span> / updated specs:</span>
+<span id="cb3-11">    <span class="ex" style="color: null;">-</span> anaconda</span>
+<span id="cb3-12">    <span class="ex" style="color: null;">-</span> cudatoolkit=10.2</span>
+<span id="cb3-13">    <span class="ex" style="color: null;">-</span> fastai</span>
+<span id="cb3-14">    <span class="ex" style="color: null;">-</span> gh</span>
+<span id="cb3-15"></span>
+<span id="cb3-16"></span>
+<span id="cb3-17"><span class="ex" style="color: null;">The</span> following packages will be downloaded:</span>
+<span id="cb3-18"></span>
+<span id="cb3-19">    <span class="ex" style="color: null;">package</span>                    <span class="kw" style="color: #003B4F;">|</span>            <span class="ex" style="color: null;">build</span></span>
+<span id="cb3-20">    <span class="ex" style="color: null;">---------------------------</span><span class="kw" style="color: #003B4F;">|</span><span class="ex" style="color: null;">-----------------</span></span>
+<span id="cb3-21">    <span class="ex" style="color: null;">ca-certificates-2020.7.22</span>  <span class="kw" style="color: #003B4F;">|</span>                <span class="ex" style="color: null;">0</span>         132 KB  anaconda</span>
+<span id="cb3-22">    <span class="ex" style="color: null;">certifi-2020.6.20</span>          <span class="kw" style="color: #003B4F;">|</span>           <span class="ex" style="color: null;">py37_0</span>         159 KB  anaconda</span>
+<span id="cb3-23">    <span class="ex" style="color: null;">conda-4.8.4</span>                <span class="kw" style="color: #003B4F;">|</span>           <span class="ex" style="color: null;">py37_0</span>         3.0 MB  anaconda</span>
+<span id="cb3-24">    <span class="ex" style="color: null;">cudatoolkit-10.2.89</span>        <span class="kw" style="color: #003B4F;">|</span>       <span class="ex" style="color: null;">hfd86e86_1</span>       540.0 MB  anaconda</span>
+<span id="cb3-25">    <span class="ex" style="color: null;">gh-0.11.1</span>                  <span class="kw" style="color: #003B4F;">|</span>                <span class="ex" style="color: null;">0</span>         5.5 MB  fastai</span>
+<span id="cb3-26">    <span class="ex" style="color: null;">openssl-1.1.1g</span>             <span class="kw" style="color: #003B4F;">|</span>       <span class="ex" style="color: null;">h7b6447c_0</span>         3.8 MB  anaconda</span>
+<span id="cb3-27">    <span class="ex" style="color: null;">------------------------------------------------------------</span></span>
+<span id="cb3-28">                                          <span class="ex" style="color: null;">Total:</span>       552.5 MB</span>
+<span id="cb3-29"></span>
+<span id="cb3-30"><span class="ex" style="color: null;">The</span> following NEW packages will be INSTALLED:</span>
+<span id="cb3-31"></span>
+<span id="cb3-32">  <span class="ex" style="color: null;">gh</span>                 fastai/linux-64::gh-0.11.1-0</span>
+<span id="cb3-33"></span>
+<span id="cb3-34"><span class="ex" style="color: null;">The</span> following packages will be SUPERSEDED by a higher-priority channel:</span>
+<span id="cb3-35"></span>
+<span id="cb3-36">  <span class="ex" style="color: null;">ca-certificates</span>                                 pkgs/main <span class="at" style="color: #657422;">--</span><span class="op" style="color: #5E5E5E;">&gt;</span> anaconda</span>
+<span id="cb3-37">  <span class="ex" style="color: null;">certifi</span>                                         pkgs/main <span class="at" style="color: #657422;">--</span><span class="op" style="color: #5E5E5E;">&gt;</span> anaconda</span>
+<span id="cb3-38">  <span class="ex" style="color: null;">conda</span>                                           pkgs/main <span class="at" style="color: #657422;">--</span><span class="op" style="color: #5E5E5E;">&gt;</span> anaconda</span>
+<span id="cb3-39">  <span class="ex" style="color: null;">cudatoolkit</span>                                     pkgs/main <span class="at" style="color: #657422;">--</span><span class="op" style="color: #5E5E5E;">&gt;</span> anaconda</span>
+<span id="cb3-40">  <span class="ex" style="color: null;">openssl</span>                                         pkgs/main <span class="at" style="color: #657422;">--</span><span class="op" style="color: #5E5E5E;">&gt;</span> anaconda</span>
+<span id="cb3-41"></span>
+<span id="cb3-42"></span>
+<span id="cb3-43"><span class="ex" style="color: null;">Proceed</span> <span class="er" style="color: #AD0000;">(</span><span class="ex" style="color: null;">[y]/n</span><span class="kw" style="color: #003B4F;">)</span><span class="ex" style="color: null;">?</span></span></code></pre></div></li>
+<li><p>Once installed, you can quickly test that your GPU is seen and used from the command line like so:</p>
+<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><span class="ex" style="color: null;">$</span> python <span class="at" style="color: #657422;">-c</span> <span class="st" style="color: #20794D;">'import torch; print(torch.cuda.get_device_name())'</span></span>
+<span id="cb4-2"><span class="ex" style="color: null;">GeForce</span> GTX 970</span>
+<span id="cb4-3"><span class="ex" style="color: null;">$</span> python <span class="at" style="color: #657422;">-c</span> <span class="st" style="color: #20794D;">'import torch; print(torch.rand(2,3).cuda())'</span></span>
+<span id="cb4-4"><span class="ex" style="color: null;">tensor</span><span class="er" style="color: #AD0000;">(</span><span class="ex" style="color: null;">[[0.3352,</span> 0.0835, 0.5349],</span>
+<span id="cb4-5">        <span class="ex" style="color: null;">[0.3712,</span> 0.2851, 0.8767]], device=<span class="st" style="color: #20794D;">'cuda:0'</span><span class="kw" style="color: #003B4F;">)</span></span></code></pre></div></li>
+</ol>
+<p>If you see your expected video card and a <code>tensor</code> returned, you’re all set. If you have multiple GPU’s installed, you may need to specify which one to use. Check out <a href="https://stackoverflow.com/questions/37893755/tensorflow-set-cuda-visible-devices-within-jupyter">this stack overflow article</a> on how to set the appropriate environment variables for the command line and for jupyter to work.</p>
+</section>
+<section id="a-note-on-updates" class="level3">
+<h3 class="anchored" data-anchor-id="a-note-on-updates">A note on updates</h3>
+<p>I’ve noticed that if you update conda using <code>conda update --all</code>, it will try to pull in the latest version of <code>cudatoolkit</code>, which as of this writing is <code>cudatoolkit-11.0.221-h6bb024c_0</code>. This is safe to do, but you will need to downgrade back to <code>cudatoolkit-10.2</code>. This seems to be due to how anaconda handles/prioritizes packages from various channels. Below is an example.</p>
+<section id="upgrading-conda-only-showing-cudatoolkit-for-visbility---your-output-will-differ" class="level4">
+<h4 class="anchored" data-anchor-id="upgrading-conda-only-showing-cudatoolkit-for-visbility---your-output-will-differ">Upgrading conda (only showing cudatoolkit for visbility - your output will differ)</h4>
+<div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><span class="ex" style="color: null;">$</span> conda update <span class="at" style="color: #657422;">--all</span></span>
+<span id="cb5-2"><span class="ex" style="color: null;">...</span></span>
+<span id="cb5-3"><span class="ex" style="color: null;">The</span> following packages will be UPDATED:</span>
+<span id="cb5-4"></span>
+<span id="cb5-5">  <span class="ex" style="color: null;">cudatoolkit</span>        anaconda::cudatoolkit-10.2.89-hfd86e8~ <span class="at" style="color: #657422;">--</span><span class="op" style="color: #5E5E5E;">&gt;</span> pkgs/main::cudatoolkit-11.0.221-h6bb024c_0</span></code></pre></div>
+</section>
+<section id="downgrading-cudatoolkit" class="level4">
+<h4 class="anchored" data-anchor-id="downgrading-cudatoolkit">Downgrading cudatoolkit</h4>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><span class="ex" style="color: null;">$</span> conda install pytorch torchvision cudatoolkit=10.2 <span class="at" style="color: #657422;">-c</span> pytorch</span>
+<span id="cb6-2"><span class="ex" style="color: null;">...</span></span>
+<span id="cb6-3">  <span class="ex" style="color: null;">added</span> / updated specs:</span>
+<span id="cb6-4">    <span class="ex" style="color: null;">-</span> cudatoolkit=10.2</span>
+<span id="cb6-5"></span>
+<span id="cb6-6"><span class="ex" style="color: null;">The</span> following packages will be downloaded:</span>
+<span id="cb6-7"></span>
+<span id="cb6-8">    <span class="ex" style="color: null;">package</span>                    <span class="kw" style="color: #003B4F;">|</span>            <span class="ex" style="color: null;">build</span></span>
+<span id="cb6-9">    <span class="ex" style="color: null;">---------------------------</span><span class="kw" style="color: #003B4F;">|</span><span class="ex" style="color: null;">-----------------</span></span>
+<span id="cb6-10">    <span class="ex" style="color: null;">cudatoolkit-10.2.89</span>        <span class="kw" style="color: #003B4F;">|</span>       <span class="ex" style="color: null;">hfd86e86_1</span>       365.1 MB</span>
+<span id="cb6-11">    <span class="ex" style="color: null;">------------------------------------------------------------</span></span>
+<span id="cb6-12">                                           <span class="ex" style="color: null;">Total:</span>       365.1 MB</span>
+<span id="cb6-13"></span>
+<span id="cb6-14"><span class="ex" style="color: null;">The</span> following packages will be DOWNGRADED:</span>
+<span id="cb6-15"></span>
+<span id="cb6-16">  <span class="ex" style="color: null;">cudatoolkit</span>                           11.0.221-h6bb024c_0 <span class="at" style="color: #657422;">--</span><span class="op" style="color: #5E5E5E;">&gt;</span> 10.2.89-hfd86e86_1</span></code></pre></div>
+</section>
+<section id="troubleshooting" class="level4">
+<h4 class="anchored" data-anchor-id="troubleshooting">Troubleshooting</h4>
+<p>If you get the below trying to use <code>torch</code> then cuda isn’t working as expected.</p>
+<div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><span class="ex" style="color: null;">$</span> python <span class="at" style="color: #657422;">-c</span> <span class="st" style="color: #20794D;">'import torch; print(torch.rand(2,3).cuda())'</span></span>
+<span id="cb7-2"><span class="ex" style="color: null;">Traceback</span> <span class="er" style="color: #AD0000;">(</span><span class="ex" style="color: null;">most</span> recent call last<span class="kw" style="color: #003B4F;">)</span><span class="bu" style="color: null;">:</span></span>
+<span id="cb7-3">  <span class="ex" style="color: null;">File</span> <span class="st" style="color: #20794D;">"&lt;string&gt;"</span>, line 1, in <span class="op" style="color: #5E5E5E;">&lt;</span>module<span class="op" style="color: #5E5E5E;">&gt;</span></span>
+<span id="cb7-4">  <span class="ex" style="color: null;">File</span> <span class="st" style="color: #20794D;">"/home/tbeck/anaconda3/envs/fastai/lib/python3.7/site-packages/torch/cuda/__init__.py"</span>, line 192, in _lazy_init</span>
+<span id="cb7-5">    <span class="fu" style="color: #4758AB;">_check_driver()</span></span>
+<span id="cb7-6">  <span class="ex" style="color: null;">File</span> <span class="st" style="color: #20794D;">"/home/tbeck/anaconda3/envs/fastai/lib/python3.7/site-packages/torch/cuda/__init__.py"</span>, line 95, in _check_driver</span>
+<span id="cb7-7">    <span class="ex" style="color: null;">raise</span> AssertionError<span class="er" style="color: #AD0000;">(</span><span class="st" style="color: #20794D;">"Torch not compiled with CUDA enabled"</span><span class="kw" style="color: #003B4F;">)</span></span>
+<span id="cb7-8"><span class="ex" style="color: null;">AssertionError:</span> Torch not compiled with CUDA enabled</span></code></pre></div>
+<p>Note that trying to install <code>cudatoolkit=10.2</code> alone might result in this error, so be sure that <code>pytorch</code> and <code>torchvision</code> are included when specifying <code>cudatoolkit=10.2</code>.</p>
+</section>
+</section>
+<section id="preparing-for-class" class="level3">
+<h3 class="anchored" data-anchor-id="preparing-for-class">Preparing for class</h3>
+<p>There are two sets of notebooks for the class:</p>
+<ul>
+<li>The <code>fastbook</code>, a guided set of notebooks with prose for following along in the videos: <a href="https://github.com/fastai/fastbook">fastbook</a></li>
+<li>The same notebooks as a study aid: <a href="https://github.com/fastai/course-v4">course-v4</a></li>
+</ul>
+<p>Please consider showing your support by buying the fastbook: <a href="https://www.amazon.com/Deep-Learning-Coders-fastai-PyTorch/dp/1492045527">Deep Learning for Coders with fastai and PyTorch: AI Applications Without a PhD</a></p>
+<p>I setup my own area for hacking:</p>
+<div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><span class="ex" style="color: null;">$</span> mkdir ~/src</span>
+<span id="cb8-2"><span class="ex" style="color: null;">$</span> cd ~/src <span class="kw" style="color: #003B4F;">&amp;&amp;</span> <span class="fu" style="color: #4758AB;">git</span> clone https://github.com/fastai/fastbook.git <span class="kw" style="color: #003B4F;">&amp;&amp;</span> <span class="fu" style="color: #4758AB;">git</span> clone https://github.com/fastai/course-v4.git</span></code></pre></div>
+<p>Now that CUDA is working and we have the code, I prefer fire up my <code>jupyter notebook</code> in a <code>screen</code> session. To do this I generated a <a href="default%20jupyter%20notebook%20config">https://jupyter-notebook.readthedocs.io/en/stable/config.html</a> via <code>jupyte notebook --generate-config</code> and wrote it to <code>~/.jupyter/jupyte_notebook_config.py</code>. Then I made it listen on <code>0.0.0.0</code> so I can reach it from my LAN (or anywhere in the world via wireguard!).</p>
+<p>Now I just run <code>screen</code>, activate conda with <code>conda activate fastai</code>, and finally start jupyter with <code>jupyter notebook</code>. For tricks on using screen see <a href="https://gist.github.com/jctosta/af918e1618682638aa82">this quickreference</a></p>
+<p>If you prefer to use jupyter lab, you’ll need to <code>conda install jupyterlab</code> and run <code>jupyter lab</code> instead.</p>
+
+
+</section>
+</section>
+</section>
+
+ ]]></description>
+  <category>education</category>
+  <category>fastai</category>
+  <guid>https://www.tbeck.io/blog/posts/2020/09/2020-09-05-the-story-so-far.html</guid>
+  <pubDate>Sat, 05 Sep 2020 07:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>fastai v4: Lesson 1</title>
+  <dc:creator><a href='https://www.linkedin.com/in/tmbeck'>Tim Beck</a></dc:creator>
+  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-lesson-1.html</link>
+  <description><![CDATA[ 
+
+
+
+<section id="lesson-1" class="level1">
+<h1>Lesson 1</h1>
+<p>Notes from fastai lesson 1.</p>
+<section id="links" class="level2">
+<h2 class="anchored" data-anchor-id="links">Links</h2>
+<ul>
+<li><a href="https://course.fast.ai/videos/?lesson=1">Lesson 1 Video</a></li>
+<li><a href="https://forums.fast.ai/">fastai Forum</a></li>
+</ul>
+</section>
+<section id="notes" class="level2">
+<h2 class="anchored" data-anchor-id="notes">Notes</h2>
+<ol type="1">
+<li><p>Discussed what’s needed to take this course (not much!).</p></li>
+<li><p>Discussed history of AI and how deep neural networks came to be. Mostly news to me, 1/10.</p></li>
+<li><p>Introduced Jupyter, ipywidgets, REPL. Mostly seen this before, 7/10.</p></li>
+<li><p>Introduced ML (repeat, but still new, 4/10)</p>
+<ul>
+<li>take an input, process it, get an output.</li>
+<li>Samuel’s terminology: take inputs &amp; weights into a model, generate results</li>
+<li>Add feedback: measure performance of the results (a metric), then change weights. Rinse &amp; repeat.</li>
+<li>Different weights to the model allows it to do a different task</li>
+<li>Universal approximation theorem: theory that a neural network could solve any problem to any level of accuracy.</li>
+<li>Need a way to update weights - SGD: stochastic gradient descent - to update the weights</li>
+</ul></li>
+<li><p>ML Limitations</p>
+<ul>
+<li>A model can only be created from data</li>
+<li>A model can only learn from patterns in the inputs</li>
+<li>A model can only make a prediction - actions happen externally</li>
+</ul>
+<p>Labeled data is key and often missing - good part, bad part, etc.</p>
+<p>It is important to note that a feedback loop can be created, resulting in a causal relationship where none existed before. Jeremy gave an example in <a href="https://youtu.be/_QUEXsHfsA0?t=3677">lesson 1</a>. This goes to ethics along ML and understanding inherent biases in your training dataset that you may not be aware of.</p></li>
+<li><p>The fastai notebook</p>
+<p>Intro to fastai. Discuss REPL, data sets, etc.</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;">from</span> fastai.vision.<span class="bu" style="color: null;">all</span> <span class="im" style="color: #00769E;">import</span> <span class="op" style="color: #5E5E5E;">*</span></span></code></pre></div>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1">learner <span class="op" style="color: #5E5E5E;">=</span> cnn_learner(dls, resnet34, metrics<span class="op" style="color: #5E5E5E;">=</span>error_rate)</span></code></pre></div>
+<p>Here <code>cnn_learner</code> is a function that generates our model, <code>dls</code> is our dataset, <code>resnet34</code> is our architecture, and <code>error_rate</code> is a loss function for feedback.</p>
+<p><code>resnet34</code> is a predefined neural network trained on images that is free to use. <code>34</code> indicates it has 34 layers, more layers requires more GPU memory.</p>
+<p><code>error_rate</code> is computed on data not used in training, also known as a holdout set or validation set, to help avoid overfitting. Might need to increase the size of the holdout set to avoid overfitting. The ambiguiuty is actually important in model building, otherwise the model will only know how to recognize images it has seen before.</p></li>
+<li><p>Other uses</p>
+<p>segmentation: figuring out what every pixel in an image is (what label it corresponds to)</p>
+<p>For a PWA, labels might be</p>
+<ul>
+<li>trace, screw, via, component</li>
+</ul>
+<p>A larger training set might allow</p>
+<ul>
+<li>trace, via, capacitor, resistor, inductor, transistor, integrated circuit, etc.</li>
+</ul>
+<p>Project idea: create an architecture for use in image segmentation that is trained on images of various PWAs (raspberry Pis, motherboards, etc.) to recognize features.</p>
+<p>tabular data: fitting a model to predict salary based on a variety of parameters, predicting ratings a user might give a movie they haven’t seen based on previous ratings they have given (known as collaboration, used in recommendation engines)</p></li>
+</ol>
+</section>
+<section id="jargon" class="level2">
+<h2 class="anchored" data-anchor-id="jargon">Jargon</h2>
+<table class="table">
+<colgroup>
+<col style="width: 53%">
+<col style="width: 46%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Keyword</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Architecture</td>
+<td style="text-align: left;">The “program” we are running. Often synonymous with model, but represents its functional form..</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Parameters</td>
+<td style="text-align: left;">The “weights” into the “program” that alter its performance</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Predictions</td>
+<td style="text-align: left;">The output of our architecture, computed from independent variables which does not include labels</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Labels</td>
+<td style="text-align: left;">The targets or dependent variables, assumed to be true for a given prediction.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Loss</td>
+<td style="text-align: left;">A metric of performance we measure our model by: how well did our prediction (computed from independent variables) match our labels (our dependent variables)?</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Model</td>
+<td style="text-align: left;">The combination of the parameters and architecture that can act on inputs to generate a prediction.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Inputs</td>
+<td style="text-align: left;">The data on which the model acts to generate a prediction. No inputs (data) == No predictions!</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Action</td>
+<td style="text-align: left;">The decision made from reasoning about a given prediction.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Transfer learning</td>
+<td style="text-align: left;">Using a pre-trained model for a task other than what it was originally intended for (via training)</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Fine Tuning</td>
+<td style="text-align: left;">A transfer learning technique that updates the parameters of a pretrained model by training for additional epochs using a different task from that used for pretraining. This is also known as fitting.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">head</td>
+<td style="text-align: left;">The last and newly added layer of a model which trains it on a particular data set. This replaces the previous layer when <code>cnn_learner</code> is used.</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">epoch</td>
+<td style="text-align: left;">One complete training of the model on the complete dataset</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Over fitting</td>
+<td style="text-align: left;">When a model learns the unique characteristics of a dataset rather than a generalization, limiting its ability to do inference on new data.</td>
+</tr>
+</tbody>
+</table>
+<p>Howard, Jeremy. Deep Learning for Coders with fastai and PyTorch . O’Reilly Media. Kindle Edition.</p>
+<p>From the loss, we can /update/ the weight for a given input, thus allowing our system to learn.</p>
+</section>
+<section id="homework" class="level2">
+<h2 class="anchored" data-anchor-id="homework">Homework</h2>
+<p>Do the questionaire, run the notebooks, etc.</p>
+<section id="questionnaire" class="level3">
+<h3 class="anchored" data-anchor-id="questionnaire">Questionnaire</h3>
+<p>Some of these questions were answered after watching both videos and reading chapter 1 of the book. Although this blog post is titled lesson 1, chapter 1 is covered in the first two lessons. Since I’m consuming the material one lesson at a time I’ll continue to follow this pattern.</p>
+<ul>
+<li>(If you’re not sure of the answer to a question, try watching the next lesson and then coming back to this one, or read the first chapter of the book.)</li>
+</ul>
+<ol type="1">
+<li><p>Do you need these for deep learning?</p>
+<p>Lots of math T / F</p>
+<ul>
+<li>False: Much of the math is taken for you thanks to libraries such as numpy.</li>
+</ul>
+<p>Lots of data T / F</p>
+<ul>
+<li><p>False: Relatively small data sets can train world class models - no need for “Big Data”! Lots of expensive computers T / F</p></li>
+<li><p>False: You can use consumer grade hardware if you have it or take advantage of Google Cloud, AWS, Colab, etc.</p></li>
+</ul>
+<p>A PhD T / F</p>
+<ul>
+<li>False: You will need some knowledge of programming and understanding of your data set, but a PhD is not needed.</li>
+</ul></li>
+<li><p>Name five areas where deep learning is now the best in the world.</p>
+<ol type="1">
+<li>NLP (natural language processing)</li>
+<li>Computer Vision</li>
+<li>Medicine</li>
+<li>Biology</li>
+<li>Image generalization</li>
+<li>Forecasting</li>
+<li>Robotics (grip strength, movement)</li>
+</ol></li>
+<li><p>What was the name of the first device that was based on the principle of the artificial neuron?</p></li>
+</ol>
+<p>The Mark I Perceptron (sounds like something from Fallout!)</p>
+<ol start="4" type="1">
+<li><p>Based on the book of the same name, what are the requirements for parallel distributed processing (PDP)?</p>
+<ul>
+<li>A set of processing units</li>
+<li>A state of activation</li>
+<li>An output function for each unit</li>
+<li>A pattern of connectivity between units</li>
+<li>A propagation rule for patterns to pass between units via a pattern of connectivity</li>
+<li>An activation rule that controls the output for a given input and current state of a unit</li>
+<li>A learning rule that modifies patterns of connectivity</li>
+<li>An environment to operate in (often overlooked)</li>
+</ul></li>
+<li><p>What were the two theoretical misunderstandings that held back the field of neural networks?</p>
+<ul>
+<li>That because a single layer of neurons could not simulate an XOR, neural networks were a dead end</li>
+<li>DNN would be too big and too slow to be useful</li>
+</ul></li>
+<li><p>What is a GPU?</p>
+<ul>
+<li>A Graphcis Processing Unit, designed for massively parallel execution of floating point vectors.</li>
+</ul></li>
+<li><p>Open a notebook and execute a cell containing: 1+1. What happens?</p>
+<ul>
+<li>It computes and displays the output (2)</li>
+</ul></li>
+<li><p>Follow through each cell of the stripped version of the notebook for this chapter. Before executing each cell, guess what will happen.</p>
+<ul>
+<li>Done in the notebook…</li>
+</ul></li>
+<li><p>Complete the Jupyter Notebook online appendix.</p>
+<ul>
+<li>Done</li>
+</ul></li>
+<li><p>Why is it hard to use a traditional computer program to recognize images in a photo?</p>
+<ul>
+<li>Requires a pixel by pixel search of the image, or something akin to a kernel to review pixel groupings, with significant comparison and cyclic complexity. Here, we tell the computer what to think, when to think it - we are explicit. This is converse to machine learning, which learns the patterns in the data and uses those patterns to recognize images in a photo.</li>
+</ul></li>
+<li><p>What did Samuel mean by “weight assignment”?</p>
+<ul>
+<li>Weight assignments are variables used in a model to alter the performance of the program (model). The weight assignments must have an automatic means to be updated, so as to provide feedback to improve the performance of the model for its respective purpose.</li>
+</ul></li>
+<li><p>What term do we normally use in deep learning for what Samuel called “weights”?</p>
+<ul>
+<li>We call them “parameters”.</li>
+</ul></li>
+<li><p>Draw a picture that summarizes Samuel’s view of a machine learning model.</p></li>
+</ol>
+<pre><code>* results = model(inputs, weights)
+* performance = results - actuals
+* weights = performance(weights)
+
+Essentially, the inputs of a model are used to generate results. Those results have a certain performance, which is improved by modifying the weights and repeating the operation.</code></pre>
+<ol start="14" type="1">
+<li><p>Why is it hard to understand why a deep learning model makes a particular prediction?</p>
+<ul>
+<li>Because of the complexity of the “black box” - it would be necessary to instrument each layer of a neural network in order to understand why. In other words, the why is the entirety of the state machine, although some parts of the state machine may be better than others.</li>
+</ul></li>
+<li><p>What is the name of the theorem that shows that a neural network can solve any mathematical problem to any level of accuracy?</p>
+<ul>
+<li>Universal approximation theorem (reminds me of using taylor series expansion to approximate various mathematical functions)</li>
+</ul></li>
+<li><p>What do you need in order to train a model?</p>
+<ul>
+<li>You need a dataset and an architecture (a pretrained model)</li>
+</ul></li>
+<li><p>How could a feedback loop impact the rollout of a predictive policing model?</p>
+<ul>
+<li>Inherent bias in the dataset could lead to increased policing of a particular population representative of the bias, resulting in additional policing, enhancing the existing dataset bias.</li>
+</ul></li>
+<li><p>Do we always have to use 224×224-pixel images with the cat recognition model?</p>
+<ul>
+<li>No, but larger images or sizes may impact performance of the GPU (meaning it will take longer for the model to learn)</li>
+</ul></li>
+<li><p>What is the difference between classification and regression?</p>
+<ul>
+<li>Classification predicts the category of a given input (think predicting finite enumerations)</li>
+<li>Regression predicts a future numeric value, like the temperature tomorrow</li>
+</ul></li>
+<li><p>What is a validation set? What is a test set? Why do we need them?</p>
+<ul>
+<li>A validation or hold out set is a subset of a dataset that we do not train the model with, but we use to grade the model’s performance.</li>
+<li>A test set is a dataset we do not show even ourselves, to avoid introducing bias through EDA and model training.</li>
+<li>We need these to avoid overfitting or introducing bias into our models</li>
+</ul></li>
+<li><p>What will fastai do if you don’t provide a validation set?</p>
+<ul>
+<li>It will automatically use a subset of your data as the validation set.</li>
+</ul></li>
+<li><p>Can we always use a random sample for a validation set? Why or why not?</p>
+<ul>
+<li>If we used a random sample for validation, then repeated training (e.g.&nbsp;resampling the random data set and training the model on the resampled data) we could overfit our model.</li>
+<li>If we use a static sample for validation, then repeated training won’t be able to overfit, because it will never learn from the validation set.</li>
+<li>For example, with time series data we may hold out a specific period (say the last two weeks) of data as a validation set, rather than a random sampling of the dataset..</li>
+</ul></li>
+<li><p>What is overfitting? Provide an example.</p>
+<ul>
+<li>Overfitting is the process of a model “memorizing” a given dataset. This can happen when our learning rate continues to increase and our error rate tends to zero. For example, if you overtrained a model on your entire dataset of cats, it would not be able to perform inference on new cat photos it has never seen before.</li>
+</ul></li>
+<li><p>What is a metric? How does it differ from “loss”?</p>
+<ul>
+<li>A metric is all we care about: it is how well our model performs on our validation set.</li>
+</ul></li>
+<li><p>How can pretrained models help?</p>
+<ul>
+<li>Pretrained models can be used to train a new model (transfer learning)</li>
+</ul></li>
+<li><p>What is the “head” of a model?</p>
+<ul>
+<li>The head of the model is the layer who’s parameters are modified by training</li>
+</ul></li>
+<li><p>What kinds of features do the early layers of a CNN find? How about the later layers?</p>
+<ul>
+<li>This depends, but a CNN might first learn things like basic shapes or color gradients. Later layers might recognize repeating patterns or more specific shapes.</li>
+</ul></li>
+<li><p>Are image models only useful for photos?</p>
+<ul>
+<li>No! It’s possible to create images from many different types of data, including log files, executables, sound, etc. This can be done by transforming data to grayscale, or using existing visualization techniques (such as FFT).</li>
+</ul></li>
+<li><p>What is an “architecture”?</p>
+<ul>
+<li>An architecture is a pretrained model from a specific dataset. <code>resnet</code> is an example of an architecture used in this book for computer vision.</li>
+</ul></li>
+<li><p>What is segmentation?</p>
+<ul>
+<li>segmentation is the label of individual pixels of data in an image, e.g.&nbsp;applying the label “car” to the parts of an image with a car in it.</li>
+</ul></li>
+<li><p>What is y_range used for? When do we need it?</p>
+<ul>
+<li><code>y_range</code></li>
+</ul></li>
+<li><p>What are “hyperparameters”?</p>
+<ul>
+<li>A hyperparameter is a parameter about a parameter. When choosing new hyper parameters we must be careful or we may inadvertently introduce bias or overfitting the validation data, basically “finding the answer we want to hear”.</li>
+</ul></li>
+<li><p>What’s the best way to avoid failures when using AI in an organization?</p>
+<ul>
+<li>To understand why a validation and test data set are needed and to ensure they are properly used when developing a model.</li>
+</ul></li>
+</ol>
+</section>
+</section>
+<section id="further-research" class="level2">
+<h2 class="anchored" data-anchor-id="further-research">Further Research</h2>
+<p>I skipped these because I thought the answers were easy, but decided to return to them for completeness.</p>
+<ol type="1">
+<li><p>Why is a GPU useful for deep learning? How is a CPU different, and why is it less effective for deep learning?</p>
+<ul>
+<li>GPU’s contain thousands of massively parallel execution cores optimized for floating point arithmetic and matrix math. They contain relatively small amounts of extremely high bandwidth memory. These properties make them advantageous for DL, but inhibit them from being used for, say, running a Web Browser. CPU’s are general purpose computing devices, containing substantially fewer cores, slower memory speed, and tend to favor integer math over floating point math or matrix math (although Intel has tried to change this with AVX512…poorly). A key performance indicator for both CPU and GPUs that tend to lead to effective DL is the FLOP (floating point operations). GPUs typically have substantially higher FLOPs than CPUs.</li>
+</ul></li>
+<li><p>Try to think of three areas where feedback loops might impact the use of machine learning. See if you can find documented examples of that happening in practice.</p>
+<ol type="1">
+<li><p>Elections: if a model with a feedback loop is used to predict election outcomes and has substantial influence on a population of voters, it could dissentivize voters from turning out for an election. While this might be most visible for American presedential races, it could affect less publicized elections such as those for ballot measures and Congress. I don’t think Five-Thirty-Eight is this…yet.</p></li>
+<li><p>With the recent Facebook news and Russian influence in American Democracy, I think we’re beginning to see a trend of adversarial machine learning, which is exploiting a competitors production models to destablize or influence its outcome. I think nation states and other actors will continue to use feedback loops in active learning systems.</p></li>
+<li><p>Search results. I Google’d a whiskey bottle to read a review before purchasing it. Now Google shows me whiskey reviews in my news feed, displacing other news articles. Reading these seems to reinforce the model and increases the number of articles I see. Since the number of articles I can read is limited, there is no way to “tone down” the model without telling it I’m simply not interested in whiskey. It’s kind of interesting because in general you implicitly train Google. You can’t implicitly untrain it (e.g.&nbsp;there is no decay function or “forgetting”, or it operates on a time horizon I havent seen yet).</p></li>
+</ol></li>
+</ol>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>education</category>
+  <category>fastai</category>
+  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-lesson-1.html</guid>
+  <pubDate>Sat, 05 Sep 2020 07:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Wavelets in Jupyter Notebooks</title>
+  <link>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets.html</link>
+  <description><![CDATA[ 
+
+
+
+<p>This is a notebook cobbled together from information and code from the following sources:</p>
+<ul>
+<li><a href="https://github.com/PyWavelets/pywt">pywavelets</a></li>
+<li><a href="http://ataspinar.com/2018/12/21/a-guide-for-using-the-wavelet-transform-in-machine-learning/">Ahmet Taspinar’s guide for using wavelet in ML</a>
+<ul>
+<li><a href="https://github.com/taspinar/siml/blob/master/notebooks/WV2%20-%20Visualizing%20the%20Scaleogram%2C%20time-axis%20and%20Fourier%20Transform.ipynb">Ahemt’s example visualization using scaleogram</a></li>
+</ul></li>
+<li><a href="https://www.kaggle.com/asauve/a-gentle-introduction-to-wavelet-for-data-analysis/execution">Alexander Sauve’s introduction to wavelet for EDA</a></li>
+</ul>
+<section id="why" class="level2">
+<h2 class="anchored" data-anchor-id="why">Why?</h2>
+<p>This notebook was created from the links above to test out how fastpages handle a combination of data and images within a notebook, when that notebook is converted for easy web viewing by jekyll.</p>
+<p>The above author’s code seemed like a good dry run and test of the fastpage’s conversion from jupyter notebook to blog post.</p>
+<div class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="co" style="color: #5E5E5E;"># This is a comment</span></span></code></pre></div>
+</div>
+<div class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="im" style="color: #00769E;">import</span> numpy <span class="im" style="color: #00769E;">as</span> np</span>
+<span id="cb2-2"><span class="im" style="color: #00769E;">import</span> pandas <span class="im" style="color: #00769E;">as</span> pd</span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="im" style="color: #00769E;">from</span> scipy.fftpack <span class="im" style="color: #00769E;">import</span> fft</span>
+<span id="cb2-5"><span class="im" style="color: #00769E;">import</span> matplotlib.pyplot <span class="im" style="color: #00769E;">as</span> plt</span>
+<span id="cb2-6"><span class="im" style="color: #00769E;">import</span> pywt</span></code></pre></div>
+</div>
+<div class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><span class="kw" style="color: #003B4F;">def</span> plot_wavelet(time, signal, scales, </span>
+<span id="cb3-2"><span class="co" style="color: #5E5E5E;">#                 waveletname = 'cmor1.5-1.0',</span></span>
+<span id="cb3-3">                 waveletname <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">'gaus5'</span>,</span>
+<span id="cb3-4">                 cmap <span class="op" style="color: #5E5E5E;">=</span> plt.cm.seismic, </span>
+<span id="cb3-5">                 title <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">'Wavelet Transform (Power Spectrum) of signal'</span>, </span>
+<span id="cb3-6">                 ylabel <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">'Period (years)'</span>, </span>
+<span id="cb3-7">                 xlabel <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">'Time'</span>):</span>
+<span id="cb3-8">    </span>
+<span id="cb3-9">    dt <span class="op" style="color: #5E5E5E;">=</span> time[<span class="dv" style="color: #AD0000;">1</span>] <span class="op" style="color: #5E5E5E;">-</span> time[<span class="dv" style="color: #AD0000;">0</span>]</span>
+<span id="cb3-10">    [coefficients, frequencies] <span class="op" style="color: #5E5E5E;">=</span> pywt.cwt(signal, scales, waveletname, dt)</span>
+<span id="cb3-11">    power <span class="op" style="color: #5E5E5E;">=</span> (<span class="bu" style="color: null;">abs</span>(coefficients)) <span class="op" style="color: #5E5E5E;">**</span> <span class="dv" style="color: #AD0000;">2</span></span>
+<span id="cb3-12">    period <span class="op" style="color: #5E5E5E;">=</span> <span class="fl" style="color: #AD0000;">1.</span> <span class="op" style="color: #5E5E5E;">/</span> frequencies</span>
+<span id="cb3-13">    levels <span class="op" style="color: #5E5E5E;">=</span> [<span class="fl" style="color: #AD0000;">0.0625</span>, <span class="fl" style="color: #AD0000;">0.125</span>, <span class="fl" style="color: #AD0000;">0.25</span>, <span class="fl" style="color: #AD0000;">0.5</span>, <span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">2</span>, <span class="dv" style="color: #AD0000;">4</span>, <span class="dv" style="color: #AD0000;">8</span>]</span>
+<span id="cb3-14">    contourlevels <span class="op" style="color: #5E5E5E;">=</span> np.log2(levels)</span>
+<span id="cb3-15">    </span>
+<span id="cb3-16">    fig, ax <span class="op" style="color: #5E5E5E;">=</span> plt.subplots(figsize<span class="op" style="color: #5E5E5E;">=</span>(<span class="dv" style="color: #AD0000;">15</span>, <span class="dv" style="color: #AD0000;">10</span>))</span>
+<span id="cb3-17">    im <span class="op" style="color: #5E5E5E;">=</span> ax.contourf(time, np.log2(period), np.log2(power), contourlevels, extend<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'both'</span>,cmap<span class="op" style="color: #5E5E5E;">=</span>cmap)</span>
+<span id="cb3-18">    </span>
+<span id="cb3-19">    ax.set_title(title, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">20</span>)</span>
+<span id="cb3-20">    ax.set_ylabel(ylabel, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">18</span>)</span>
+<span id="cb3-21">    ax.set_xlabel(xlabel, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">18</span>)</span>
+<span id="cb3-22">    </span>
+<span id="cb3-23">    yticks <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">**</span>np.arange(np.ceil(np.log2(period.<span class="bu" style="color: null;">min</span>())), np.ceil(np.log2(period.<span class="bu" style="color: null;">max</span>())))</span>
+<span id="cb3-24">    ax.set_yticks(np.log2(yticks))</span>
+<span id="cb3-25">    ax.set_yticklabels(yticks)</span>
+<span id="cb3-26">    ax.invert_yaxis()</span>
+<span id="cb3-27">    ylim <span class="op" style="color: #5E5E5E;">=</span> ax.get_ylim()</span>
+<span id="cb3-28">    ax.set_ylim(ylim[<span class="dv" style="color: #AD0000;">0</span>], <span class="op" style="color: #5E5E5E;">-</span><span class="dv" style="color: #AD0000;">1</span>)</span>
+<span id="cb3-29">    </span>
+<span id="cb3-30">    cbar_ax <span class="op" style="color: #5E5E5E;">=</span> fig.add_axes([<span class="fl" style="color: #AD0000;">0.95</span>, <span class="fl" style="color: #AD0000;">0.5</span>, <span class="fl" style="color: #AD0000;">0.03</span>, <span class="fl" style="color: #AD0000;">0.25</span>])</span>
+<span id="cb3-31">    fig.colorbar(im, cax<span class="op" style="color: #5E5E5E;">=</span>cbar_ax, orientation<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">"vertical"</span>)</span>
+<span id="cb3-32">    plt.show()</span>
+<span id="cb3-33"></span>
+<span id="cb3-34"><span class="kw" style="color: #003B4F;">def</span> get_ave_values(xvalues, yvalues, n <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">5</span>):</span>
+<span id="cb3-35">    signal_length <span class="op" style="color: #5E5E5E;">=</span> <span class="bu" style="color: null;">len</span>(xvalues)</span>
+<span id="cb3-36">    <span class="cf" style="color: #003B4F;">if</span> signal_length <span class="op" style="color: #5E5E5E;">%</span> n <span class="op" style="color: #5E5E5E;">==</span> <span class="dv" style="color: #AD0000;">0</span>:</span>
+<span id="cb3-37">        padding_length <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">0</span></span>
+<span id="cb3-38">    <span class="cf" style="color: #003B4F;">else</span>:</span>
+<span id="cb3-39">        padding_length <span class="op" style="color: #5E5E5E;">=</span> n <span class="op" style="color: #5E5E5E;">-</span> signal_length<span class="op" style="color: #5E5E5E;">//</span>n <span class="op" style="color: #5E5E5E;">%</span> n</span>
+<span id="cb3-40">    </span>
+<span id="cb3-41">    xarr <span class="op" style="color: #5E5E5E;">=</span> np.array(xvalues)</span>
+<span id="cb3-42">    yarr <span class="op" style="color: #5E5E5E;">=</span> np.array(yvalues)</span>
+<span id="cb3-43">    xarr.resize(signal_length<span class="op" style="color: #5E5E5E;">//</span>n, n)</span>
+<span id="cb3-44">    yarr.resize(signal_length<span class="op" style="color: #5E5E5E;">//</span>n, n)</span>
+<span id="cb3-45">    xarr_reshaped <span class="op" style="color: #5E5E5E;">=</span> xarr.reshape((<span class="op" style="color: #5E5E5E;">-</span><span class="dv" style="color: #AD0000;">1</span>,n))</span>
+<span id="cb3-46">    yarr_reshaped <span class="op" style="color: #5E5E5E;">=</span> yarr.reshape((<span class="op" style="color: #5E5E5E;">-</span><span class="dv" style="color: #AD0000;">1</span>,n))</span>
+<span id="cb3-47">    x_ave <span class="op" style="color: #5E5E5E;">=</span> xarr_reshaped[:,<span class="dv" style="color: #AD0000;">0</span>]</span>
+<span id="cb3-48">    y_ave <span class="op" style="color: #5E5E5E;">=</span> np.nanmean(yarr_reshaped, axis<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">1</span>)</span>
+<span id="cb3-49">    <span class="cf" style="color: #003B4F;">return</span> x_ave, y_ave</span>
+<span id="cb3-50"></span>
+<span id="cb3-51"><span class="kw" style="color: #003B4F;">def</span> plot_signal_plus_average(time, signal, average_over <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">5</span>):</span>
+<span id="cb3-52">    fig, ax <span class="op" style="color: #5E5E5E;">=</span> plt.subplots(figsize<span class="op" style="color: #5E5E5E;">=</span>(<span class="dv" style="color: #AD0000;">15</span>, <span class="dv" style="color: #AD0000;">3</span>))</span>
+<span id="cb3-53">    time_ave, signal_ave <span class="op" style="color: #5E5E5E;">=</span> get_ave_values(time, signal, average_over)</span>
+<span id="cb3-54">    ax.plot(time, signal, label<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'signal'</span>)</span>
+<span id="cb3-55">    ax.plot(time_ave, signal_ave, label <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">'time average (n=</span><span class="sc" style="color: #5E5E5E;">{}</span><span class="st" style="color: #20794D;">)'</span>.<span class="bu" style="color: null;">format</span>(<span class="dv" style="color: #AD0000;">5</span>))</span>
+<span id="cb3-56">    ax.set_xlim([time[<span class="dv" style="color: #AD0000;">0</span>], time[<span class="op" style="color: #5E5E5E;">-</span><span class="dv" style="color: #AD0000;">1</span>]])</span>
+<span id="cb3-57">    ax.set_ylabel(<span class="st" style="color: #20794D;">'Signal Amplitude'</span>, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">18</span>)</span>
+<span id="cb3-58">    ax.set_title(<span class="st" style="color: #20794D;">'Signal + Time Average'</span>, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">18</span>)</span>
+<span id="cb3-59">    ax.set_xlabel(<span class="st" style="color: #20794D;">'Time'</span>, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">18</span>)</span>
+<span id="cb3-60">    ax.legend()</span>
+<span id="cb3-61">    plt.show()</span>
+<span id="cb3-62">    </span>
+<span id="cb3-63"><span class="kw" style="color: #003B4F;">def</span> get_fft_values(y_values, T, N, f_s):</span>
+<span id="cb3-64">    f_values <span class="op" style="color: #5E5E5E;">=</span> np.linspace(<span class="fl" style="color: #AD0000;">0.0</span>, <span class="fl" style="color: #AD0000;">1.0</span><span class="op" style="color: #5E5E5E;">/</span>(<span class="fl" style="color: #AD0000;">2.0</span><span class="op" style="color: #5E5E5E;">*</span>T), N<span class="op" style="color: #5E5E5E;">//</span><span class="dv" style="color: #AD0000;">2</span>)</span>
+<span id="cb3-65">    fft_values_ <span class="op" style="color: #5E5E5E;">=</span> fft(y_values)</span>
+<span id="cb3-66">    fft_values <span class="op" style="color: #5E5E5E;">=</span> <span class="fl" style="color: #AD0000;">2.0</span><span class="op" style="color: #5E5E5E;">/</span>N <span class="op" style="color: #5E5E5E;">*</span> np.<span class="bu" style="color: null;">abs</span>(fft_values_[<span class="dv" style="color: #AD0000;">0</span>:N<span class="op" style="color: #5E5E5E;">//</span><span class="dv" style="color: #AD0000;">2</span>])</span>
+<span id="cb3-67">    <span class="cf" style="color: #003B4F;">return</span> f_values, fft_values</span>
+<span id="cb3-68"> </span>
+<span id="cb3-69"><span class="kw" style="color: #003B4F;">def</span> plot_fft_plus_power(time, signal):</span>
+<span id="cb3-70">    dt <span class="op" style="color: #5E5E5E;">=</span> time[<span class="dv" style="color: #AD0000;">1</span>] <span class="op" style="color: #5E5E5E;">-</span> time[<span class="dv" style="color: #AD0000;">0</span>]</span>
+<span id="cb3-71">    N <span class="op" style="color: #5E5E5E;">=</span> <span class="bu" style="color: null;">len</span>(signal)</span>
+<span id="cb3-72">    fs <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">1</span><span class="op" style="color: #5E5E5E;">/</span>dt</span>
+<span id="cb3-73">    </span>
+<span id="cb3-74">    fig, ax <span class="op" style="color: #5E5E5E;">=</span> plt.subplots(figsize<span class="op" style="color: #5E5E5E;">=</span>(<span class="dv" style="color: #AD0000;">15</span>, <span class="dv" style="color: #AD0000;">3</span>))</span>
+<span id="cb3-75">    variance <span class="op" style="color: #5E5E5E;">=</span> np.std(signal)<span class="op" style="color: #5E5E5E;">**</span><span class="dv" style="color: #AD0000;">2</span></span>
+<span id="cb3-76">    f_values, fft_values <span class="op" style="color: #5E5E5E;">=</span> get_fft_values(signal, dt, N, fs)</span>
+<span id="cb3-77">    fft_power <span class="op" style="color: #5E5E5E;">=</span> variance <span class="op" style="color: #5E5E5E;">*</span> <span class="bu" style="color: null;">abs</span>(fft_values) <span class="op" style="color: #5E5E5E;">**</span> <span class="dv" style="color: #AD0000;">2</span>     <span class="co" style="color: #5E5E5E;"># FFT power spectrum</span></span>
+<span id="cb3-78">    ax.plot(f_values, fft_values, <span class="st" style="color: #20794D;">'r-'</span>, label<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'Fourier Transform'</span>)</span>
+<span id="cb3-79">    ax.plot(f_values, fft_power, <span class="st" style="color: #20794D;">'k--'</span>, linewidth<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">1</span>, label<span class="op" style="color: #5E5E5E;">=</span><span class="st" style="color: #20794D;">'FFT Power Spectrum'</span>)</span>
+<span id="cb3-80">    ax.set_xlabel(<span class="st" style="color: #20794D;">'Frequency [Hz / year]'</span>, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">18</span>)</span>
+<span id="cb3-81">    ax.set_ylabel(<span class="st" style="color: #20794D;">'Amplitude'</span>, fontsize<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">18</span>)</span>
+<span id="cb3-82">    ax.legend()</span>
+<span id="cb3-83">    plt.show()</span>
+<span id="cb3-84"></span>
+<span id="cb3-85">dataset <span class="op" style="color: #5E5E5E;">=</span> <span class="st" style="color: #20794D;">"http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat"</span></span>
+<span id="cb3-86">df_nino <span class="op" style="color: #5E5E5E;">=</span> pd.read_table(dataset)</span>
+<span id="cb3-87">N <span class="op" style="color: #5E5E5E;">=</span> df_nino.shape[<span class="dv" style="color: #AD0000;">0</span>]</span>
+<span id="cb3-88">t0<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">1871</span></span>
+<span id="cb3-89">dt<span class="op" style="color: #5E5E5E;">=</span><span class="fl" style="color: #AD0000;">0.25</span></span>
+<span id="cb3-90">time <span class="op" style="color: #5E5E5E;">=</span> np.arange(<span class="dv" style="color: #AD0000;">0</span>, N) <span class="op" style="color: #5E5E5E;">*</span> dt <span class="op" style="color: #5E5E5E;">+</span> t0</span>
+<span id="cb3-91">signal <span class="op" style="color: #5E5E5E;">=</span> df_nino.values.squeeze()</span>
+<span id="cb3-92"> </span>
+<span id="cb3-93">scales <span class="op" style="color: #5E5E5E;">=</span> np.arange(<span class="dv" style="color: #AD0000;">1</span>, <span class="dv" style="color: #AD0000;">128</span>)</span>
+<span id="cb3-94">plot_signal_plus_average(time, signal)</span>
+<span id="cb3-95">plot_fft_plus_power(time, signal)</span>
+<span id="cb3-96">plot_wavelet(time, signal, scales)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-1.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-2.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-4-output-3.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="co" style="color: #5E5E5E;"># Create some fake data sets and show their fourier transforms (fft).</span></span>
+<span id="cb4-2"></span>
+<span id="cb4-3">t_n <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">1</span></span>
+<span id="cb4-4">N <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">100000</span></span>
+<span id="cb4-5">T <span class="op" style="color: #5E5E5E;">=</span> t_n <span class="op" style="color: #5E5E5E;">/</span> N</span>
+<span id="cb4-6">f_s <span class="op" style="color: #5E5E5E;">=</span> <span class="dv" style="color: #AD0000;">1</span><span class="op" style="color: #5E5E5E;">/</span>T</span>
+<span id="cb4-7"> </span>
+<span id="cb4-8">xa <span class="op" style="color: #5E5E5E;">=</span> np.linspace(<span class="dv" style="color: #AD0000;">0</span>, t_n, num<span class="op" style="color: #5E5E5E;">=</span><span class="bu" style="color: null;">int</span>(N))</span>
+<span id="cb4-9">xb <span class="op" style="color: #5E5E5E;">=</span> np.linspace(<span class="dv" style="color: #AD0000;">0</span>, t_n<span class="op" style="color: #5E5E5E;">/</span><span class="dv" style="color: #AD0000;">4</span>, num<span class="op" style="color: #5E5E5E;">=</span><span class="bu" style="color: null;">int</span>(N<span class="op" style="color: #5E5E5E;">/</span><span class="dv" style="color: #AD0000;">4</span>))</span>
+<span id="cb4-10"></span>
+<span id="cb4-11"></span>
+<span id="cb4-12">frequencies <span class="op" style="color: #5E5E5E;">=</span> [<span class="dv" style="color: #AD0000;">4</span>, <span class="dv" style="color: #AD0000;">30</span>, <span class="dv" style="color: #AD0000;">60</span>, <span class="dv" style="color: #AD0000;">90</span>]</span>
+<span id="cb4-13">y1a, y1b <span class="op" style="color: #5E5E5E;">=</span> np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">0</span>]<span class="op" style="color: #5E5E5E;">*</span>xa), np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">0</span>]<span class="op" style="color: #5E5E5E;">*</span>xb)</span>
+<span id="cb4-14">y2a, y2b <span class="op" style="color: #5E5E5E;">=</span> np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">1</span>]<span class="op" style="color: #5E5E5E;">*</span>xa), np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">1</span>]<span class="op" style="color: #5E5E5E;">*</span>xb)</span>
+<span id="cb4-15">y3a, y3b <span class="op" style="color: #5E5E5E;">=</span> np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">2</span>]<span class="op" style="color: #5E5E5E;">*</span>xa), np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">2</span>]<span class="op" style="color: #5E5E5E;">*</span>xb)</span>
+<span id="cb4-16">y4a, y4b <span class="op" style="color: #5E5E5E;">=</span> np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">3</span>]<span class="op" style="color: #5E5E5E;">*</span>xa), np.sin(<span class="dv" style="color: #AD0000;">2</span><span class="op" style="color: #5E5E5E;">*</span>np.pi<span class="op" style="color: #5E5E5E;">*</span>frequencies[<span class="dv" style="color: #AD0000;">3</span>]<span class="op" style="color: #5E5E5E;">*</span>xb)</span>
+<span id="cb4-17"> </span>
+<span id="cb4-18">composite_signal1 <span class="op" style="color: #5E5E5E;">=</span> y1a <span class="op" style="color: #5E5E5E;">+</span> y2a <span class="op" style="color: #5E5E5E;">+</span> y3a <span class="op" style="color: #5E5E5E;">+</span> y4a</span>
+<span id="cb4-19">composite_signal2 <span class="op" style="color: #5E5E5E;">=</span> np.concatenate([y1b, y2b, y3b, y4b])</span>
+<span id="cb4-20"> </span>
+<span id="cb4-21">f_values1, fft_values1 <span class="op" style="color: #5E5E5E;">=</span> get_fft_values(composite_signal1, T, N, f_s)</span>
+<span id="cb4-22">f_values2, fft_values2 <span class="op" style="color: #5E5E5E;">=</span> get_fft_values(composite_signal2, T, N, f_s)</span>
+<span id="cb4-23"> </span>
+<span id="cb4-24">fig, axarr <span class="op" style="color: #5E5E5E;">=</span> plt.subplots(nrows<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>, ncols<span class="op" style="color: #5E5E5E;">=</span><span class="dv" style="color: #AD0000;">2</span>, figsize<span class="op" style="color: #5E5E5E;">=</span>(<span class="dv" style="color: #AD0000;">12</span>,<span class="dv" style="color: #AD0000;">8</span>))</span>
+<span id="cb4-25">axarr[<span class="dv" style="color: #AD0000;">0</span>,<span class="dv" style="color: #AD0000;">0</span>].plot(xa, composite_signal1)</span>
+<span id="cb4-26">axarr[<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">0</span>].plot(xa, composite_signal2)</span>
+<span id="cb4-27">axarr[<span class="dv" style="color: #AD0000;">0</span>,<span class="dv" style="color: #AD0000;">1</span>].plot(f_values1, fft_values1)</span>
+<span id="cb4-28">axarr[<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">1</span>].plot(f_values2, fft_values2)</span>
+<span id="cb4-29"></span>
+<span id="cb4-30">axarr[<span class="dv" style="color: #AD0000;">0</span>,<span class="dv" style="color: #AD0000;">1</span>].set_xlim(<span class="dv" style="color: #AD0000;">0</span>, <span class="dv" style="color: #AD0000;">150</span>)</span>
+<span id="cb4-31">axarr[<span class="dv" style="color: #AD0000;">1</span>,<span class="dv" style="color: #AD0000;">1</span>].set_xlim(<span class="dv" style="color: #AD0000;">0</span>, <span class="dv" style="color: #AD0000;">150</span>)</span>
+<span id="cb4-32"></span>
+<span id="cb4-33">plt.tight_layout()</span>
+<span id="cb4-34">plt.show()</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-5-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="co" style="color: #5E5E5E;"># The El Nino Dataset</span></span>
+<span id="cb5-2"></span>
+<span id="cb5-3">df_nino</span></code></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+
+<div>
+
+<table class="dataframe table table-sm table-striped">
+  <thead>
+    <tr>
+      <th></th>
+      <th>-0.15</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-0.30</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>-0.14</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-0.41</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-0.46</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-0.66</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>498</th>
+      <td>-0.22</td>
+    </tr>
+    <tr>
+      <th>499</th>
+      <td>0.08</td>
+    </tr>
+    <tr>
+      <th>500</th>
+      <td>-0.08</td>
+    </tr>
+    <tr>
+      <th>501</th>
+      <td>-0.18</td>
+    </tr>
+    <tr>
+      <th>502</th>
+      <td>-0.06</td>
+    </tr>
+  </tbody>
+</table>
+<p>503 rows × 1 columns</p>
+</div>
+</div>
+</div>
+<div class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1">df_nino.describe()</span></code></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="6">
+
+<div>
+
+<table class="dataframe table table-sm table-striped">
+  <thead>
+    <tr>
+      <th></th>
+      <th>-0.15</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>503.000000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>0.000278</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>0.735028</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>-1.850000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>-0.485000</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>-0.070000</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>0.420000</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>2.500000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1">df_nino.hist()</span></code></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<pre><code>array([[&lt;AxesSubplot:title={'center':'-0.15'}&gt;]], dtype=object)</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets_files/figure-html/cell-8-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>wavelets</category>
+  <category>jupyter</category>
+  <guid>https://www.tbeck.io/blog/nbs/2020/09/2020-09-05-pywavelets.html</guid>
+  <pubDate>Sat, 05 Sep 2020 07:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
