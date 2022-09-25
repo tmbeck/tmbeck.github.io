@@ -2,50 +2,54 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.tbeck.io/nbs/2020/09/2020-09-05-lesson-1.html</loc>
-    <lastmod>2022-09-25T20:29:27.908Z</lastmod>
+    <lastmod>2022-09-25T22:36:02.137Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/nbs/2020/09/2020-09-05-pywavelets.html</loc>
-    <lastmod>2022-09-25T20:29:28.151Z</lastmod>
+    <lastmod>2022-09-25T22:36:02.404Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/nbs/2020/09/2020-09-06-fossil-dataset.html</loc>
-    <lastmod>2022-09-25T20:29:28.444Z</lastmod>
+    <lastmod>2022-09-25T22:36:02.694Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/nbs/2020/09/2020-09-18-fossils-production.html</loc>
-    <lastmod>2022-09-25T20:29:28.711Z</lastmod>
+    <lastmod>2022-09-25T22:36:02.960Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/posts/2020/09/2020-09-05-the-story-so-far.html</loc>
-    <lastmod>2022-09-25T20:29:29.101Z</lastmod>
+    <lastmod>2022-09-25T22:36:03.374Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/posts/2020/09/2020-09-06-lesson-2.html</loc>
-    <lastmod>2022-09-25T20:29:29.278Z</lastmod>
+    <lastmod>2022-09-25T22:36:03.577Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/posts/2020/09/2020-09-16-lesson-3.html</loc>
-    <lastmod>2022-09-25T20:29:29.521Z</lastmod>
+    <lastmod>2022-09-25T22:36:03.834Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/posts/2022/09/2022-09-24-homelab-troubleshooting.html</loc>
-    <lastmod>2022-09-25T20:29:29.678Z</lastmod>
+    <lastmod>2022-09-25T22:36:04.004Z</lastmod>
+  </url>
+  <url>
+    <loc>https://www.tbeck.io/posts/2022/09/2022-09-25-more-homelab-debugging.html</loc>
+    <lastmod>2022-09-25T22:36:04.174Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/posts/migration/index.html</loc>
-    <lastmod>2022-09-25T20:29:29.821Z</lastmod>
+    <lastmod>2022-09-25T22:36:04.337Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/posts/post-with-code/index.html</loc>
-    <lastmod>2022-09-25T20:29:29.958Z</lastmod>
+    <lastmod>2022-09-25T22:36:04.487Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/about.html</loc>
-    <lastmod>2022-09-25T20:29:30.104Z</lastmod>
+    <lastmod>2022-09-25T22:36:04.647Z</lastmod>
   </url>
   <url>
     <loc>https://www.tbeck.io/index.html</loc>
-    <lastmod>2022-09-25T20:29:30.324Z</lastmod>
+    <lastmod>2022-09-25T22:36:04.900Z</lastmod>
   </url>
 </urlset>

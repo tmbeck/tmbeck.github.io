@@ -10,6 +10,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/2022/09/2022-09-25-more-homelab-debugging.html",
       "/posts/2022/09/2022-09-24-homelab-troubleshooting.html",
       "/posts/migration/index.html",
       "/posts/post-with-code/index.html",

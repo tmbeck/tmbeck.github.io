@@ -10,7 +10,109 @@
 <atom:link href="https://www.tbeck.io/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.1.251</generator>
-<lastBuildDate>Sat, 24 Sep 2022 07:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 25 Sep 2022 07:00:00 GMT</lastBuildDate>
+<item>
+  <title>More Homelab Troubleshooting</title>
+  <dc:creator>Tim Beck</dc:creator>
+  <link>https://www.tbeck.io/posts/2022/09/2022-09-25-more-homelab-debugging.html</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="machine-check-exceptions-mce" class="level1">
+<h1>Machine Check Exceptions (MCE)</h1>
+<p>Over the lest month or so my homelab server has been rebooting unexpectedly. This started shortly after I began using influxdb to collect metrics from the host system, but disabling that has not resolved the problem. After rebooting, I noticed for the first time a machine check exception (MCE) is logged in the system journal. It happened again today, thus this post.</p>
+<pre><code>Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: Machine check events logged
+Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: CPU 10: Machine Check: 0 Bank 5: bea0000000000108
+Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: TSC 0 ADDR 1ffff8fd156d6 MISC d012000100000000 SYND 4d000000 IPID 500b000000000 
+Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: PROCESSOR 2:800f11 TIME 1664118033 SOCKET 0 APIC 5 microcode 8001138
+Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: Machine check events logged
+Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: CPU 14: Machine Check: 0 Bank 5: bea0000000000108
+Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: TSC 0 ADDR 1ffff90a01186 MISC d012000100000000 SYND 4d000000 IPID 500b000000000 
+Sep 25 08:00:44 pve1 kernel: mce: [Hardware Error]: PROCESSOR 2:800f11 TIME 1664118033 SOCKET 0 APIC d microcode 8001138</code></pre>
+<p>The interesting value here is <code>bea0000000000108</code>. After googling, I encountered some previously seen results about some existin AMD CPU Errata, as mentioned in <a href="https://bbs.archlinux.org/viewtopic.php?id=268720">the Arch Forums</a>. I’d already added the options below to my kernel command line (below), updated to the latest available/recommended BIOS version, and disable various power-saving options in the BIOS.</p>
+<pre><code>rcu_nocbs=0-15 processor.max_cstate=1 idle=nomwait</code></pre>
+<p>I ran good old memtest86 for several hours with no errors reported, so I don’t think it’s a memory issue.</p>
+<p>Interestingly, there’s a lot of mention out there of this being an issue with the GPU, possibly relating to power state changes. That alone isn’t that interesting, but my system runs headless (the 1700X has no APU and I have no GPU installed)! Suggestions on the <a href="https://community.amd.com/t5/processors/linux-on-3700x-spontaneous-reboots-caued-by-mce/td-p/263667">AMD forums</a> and <a href="https://bugzilla.kernel.org/show_bug.cgi?id=206903">elsewhere</a> include adding more kernel command line parameters:</p>
+<pre><code>amdgpu.ppfeaturemask=0xffffbfff amdgpu.dpm=0 </code></pre>
+<p>I can add these, but I wouldn’t expect them to do anything given the absence of any GPU, let alone an AMD GPU/APU.</p>
+<p>My suspicion is that the recent heatwave in the American Southwest has accelerated hardware aging and I’m seeing a hardware level failure in the Memory, PSU, or CPU. This is cheap, three-year old consumer grade hardware running in my garage so this isn’t much of a stretch.</p>
+<p>I’ll probably replace it with an AMD 5700G now that prices are coming down and if I still have problems, I’ll replace the motherboard, memory, and PSU.</p>
+</section>
+<section id="ssd-failures" class="level1">
+<h1>SSD Failures</h1>
+<p>I obtained my first SSD nearly 15 years ago; I can’t remember exactly what it was, but it was small (handful of GB) and slow. Windows XP worked on it and it had good IOPS combared to spinning rust but terrible throughput.</p>
+<p>Since then I’ve been on the SSD bandwagon for years. Most of the SSDs I’ve seen deployed didn’t fail before we retired and replaced the hardware after its depreciation period was over, but there have been a few cases in the last few years where failures have begun.</p>
+<p><img src="https://www.tbeck.io/posts/2022/09/https:/images.samsung.com/is/image/samsung/ca-850-evo-sata-3-2-5-inch-ssd-mz-75e500b-am-002-back-black?$684_547_PNG$.png" title="Typical SSD" class="img-fluid"></p>
+<center>
+The Samsung 850 EVO SSD
+</center>
+<p><br> I burned this SSD out by using it for <a href="https://www.truenas.com/docs/references/l2arc/">ZFS L2ARC</a> for the better part of a year. I suspect write amplification may have given it an early demise, but I simply disabled l2arc and moved on with life. The drive’s read performance is now relatrively bad (~50 MB/sec) and writes to it eventually lead to errors like <code>Buffer I/O error on dev sdb, logical block 6402, lost async page write</code>, aka “it’s dead, Jim”. Anyways, since I’ve been doing so much maintenance on my homelab server I noticed this in the journal:</p>
+<pre><code>Sep 25 14:23:22 pve1 smartd[4784]: Device: /dev/bus/9 [megaraid_disk_14] [SAT], Failed SMART usage Attribute: 202 Percent_Lifetime_Remain.</code></pre>
+<p>And reading the SMART attributes show:</p>
+<pre><code>root@pve1:~# smartctl -a /dev/bus/9 -d megaraid,14
+smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.15.53-1-pve] (local build)
+Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Model Family:     Crucial/Micron Client SSDs
+Device Model:     CT500MX500SSD1
+Firmware Version: M3CR020
+User Capacity:    500,107,862,016 bytes [500 GB]
+Sector Sizes:     512 bytes logical, 4096 bytes physical
+Rotation Rate:    Solid State Device
+Form Factor:      2.5 inches
+TRIM Command:     Available
+Device is:        In smartctl database [for details use: -P show]
+ATA Version is:   ACS-3 T13/2161-D revision 5
+SATA Version is:  SATA 3.3, 6.0 Gb/s (current: 6.0 Gb/s)
+SMART support is: Available - device has SMART capability.
+SMART support is: Enabled
+
+=== START OF READ SMART DATA SECTION ===
+SMART overall-health self-assessment test result: PASSED
+
+...
+
+SMART Attributes Data Structure revision number: 16
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x002f   100   100   000    Pre-fail  Always       -       0
+  5 Reallocate_NAND_Blk_Cnt 0x0032   100   100   010    Old_age   Always       -       0
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       29100
+ 12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       196
+171 Program_Fail_Count      0x0032   100   100   000    Old_age   Always       -       0
+172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       0
+173 Ave_Block-Erase_Count   0x0032   001   001   000    Old_age   Always       -       1486
+174 Unexpect_Power_Loss_Ct  0x0032   100   100   000    Old_age   Always       -       92
+180 Unused_Reserve_NAND_Blk 0x0033   000   000   000    Pre-fail  Always       -       44
+183 SATA_Interfac_Downshift 0x0032   100   100   000    Old_age   Always       -       0
+184 Error_Correction_Count  0x0032   100   100   000    Old_age   Always       -       0
+187 Reported_Uncorrect      0x0032   100   100   000    Old_age   Always       -       0
+194 Temperature_Celsius     0x0022   059   042   000    Old_age   Always       -       41 (Min/Max 0/58)
+196 Reallocated_Event_Count 0x0032   100   100   000    Old_age   Always       -       0
+197 Current_Pending_ECC_Cnt 0x0032   100   100   000    Old_age   Always       -       0
+198 Offline_Uncorrectable   0x0030   100   100   000    Old_age   Offline      -       0
+199 UDMA_CRC_Error_Count    0x0032   100   100   000    Old_age   Always       -       0
+202 Percent_Lifetime_Remain 0x0030   001   001   001    Old_age   Offline  FAILING_NOW 99
+206 Write_Error_Rate        0x000e   100   100   000    Old_age   Always       -       0
+210 Success_RAIN_Recov_Cnt  0x0032   100   100   000    Old_age   Always       -       0
+246 Total_LBAs_Written      0x0032   100   100   000    Old_age   Always       -       19698105935
+247 Host_Program_Page_Count 0x0032   100   100   000    Old_age   Always       -       3656623244
+248 FTL_Program_Page_Count  0x0032   100   100   000    Old_age   Always       -       22684509485</code></pre>
+<p>So this drive has 1% of its remaining useful life (RUL) left. Maybe I’ll replace the entire array with some of the cheap 1 TB Crucial SSDs I’ve seen on Slickdeals if they go on sale again around Black Friday.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>homelab</category>
+  <category>debugging</category>
+  <guid>https://www.tbeck.io/posts/2022/09/2022-09-25-more-homelab-debugging.html</guid>
+  <pubDate>Sun, 25 Sep 2022 07:00:00 GMT</pubDate>
+  <media:content url="https://images.samsung.com/is/image/samsung/ca-850-evo-sata-3-2-5-inch-ssd-mz-75e500b-am-002-back-black?$684_547_PNG$ " medium="image"/>
+</item>
 <item>
   <title>Homelab Troubleshooting</title>
   <dc:creator>Tim Beck</dc:creator>
