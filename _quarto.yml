@@ -3,7 +3,7 @@ project:
 
 website:
   title: "Tim's Blog"
-  site-url: "https://www.tbeck.io/blog"
+  site-url: "https://www.tbeck.io"
   page-footer: "© Tim Beck, 2022. All Rights Reserved."
   navbar:
     right:
