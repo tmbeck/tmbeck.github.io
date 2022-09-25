@@ -1,14 +1,35 @@
 ---
 title: "tbeck.io/blog"
 listing:
-  contents: posts
-  sort: "date desc"
-  type: default
-  categories: true
-  sort-ui: false
-  filter-ui: false
-  feed: true
+  - id: my-posts
+    contents: posts
+    sort: "date desc"
+    type: default
+    categories: true
+    sort-ui: false
+    filter-ui: false
+    feed: true
+  - id: my-notebooks
+    contents: nbs
+    type: grid
+    sort: "date desc"
+    categories: true
+    sort-ui: false
+    filter-ui: false
+    fields: [image, date, title]
+    page-size: 3
+    categories: numbered
 page-layout: full
 title-block-banner: true
+comments: false
+toc: true
 ---
 
+## Posts
+
+::: {#my-posts}
+:::
+
+<a href="posts/posts.html"><button type="button" class="btn btn-primary float-end btn-sm">All posts</button></a>
+
+## Notebooks

@@ -2,8 +2,11 @@
 title: "About"
 image: posts/images/headshot.jpg
 about:
-  template: jolla
+  template: trestles
   links:
+    - icon: envelope
+      text: E-Mail
+      href: mailto:tmbeck@gmail.com
     - icon: linkedin
       text: LinkedIn
       href: https://linkedin.com/in/tmbeck

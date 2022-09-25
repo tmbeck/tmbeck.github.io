@@ -4,17 +4,21 @@ project:
 website:
   title: "Tim's Blog"
   site-url: "https://tbeck.io/blog"
+  page-footer: "© Tim Beck, 2022. All Rights Reserved."
   navbar:
     right:
       - about.qmd
-      - icon: linkedin
-        text: LinkedIn
-        href: https://linkedin.com/in/tmbeck
+      - text: Posts
+        href: posts/
       - icon: github
         href: https://github.com/tmbeck
+      - icon: linkedin
+        href: https://linkedin.com/in/tmbeck
       - icon: twitter
         href: https://twitter.com
+
 format:
   html:
-    theme: cosmo
+    theme: flatly
     css: styles.css
+    toc: true
