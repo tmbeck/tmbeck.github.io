@@ -1,0 +1,14 @@
+---
+title: "Migration from fastpages"
+author: "Tim Beck"
+date: "2022-09-24"
+categories: [news]
+---
+
+Today I migrated the old blog from [fastpages](https://forums.fast.ai/t/fastpages-deprecating-fastpages-in-favor-of-quarto/99095/1) to [Quarto](https://quarto.org/).
+
+Quarto works a bit different than fastpages, but I'm excited that it's being actively developed.
+
+![](thumbnail.jpg)
+
+Since this post doesn't specify an explicit `image`, the first image in the post will be used in the listing page of posts.
