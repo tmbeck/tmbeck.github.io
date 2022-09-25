@@ -1,9 +1,10 @@
 project:
   type: website
+  output-dir: ../_site
 
 website:
   title: "Tim's Blog"
-  site-url: "https://tbeck.io/blog"
+  site-url: "https://www.tbeck.io/blog"
   page-footer: "© Tim Beck, 2022. All Rights Reserved."
   navbar:
     right:
